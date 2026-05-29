@@ -78,8 +78,10 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif; backg
   border: 1.5px dashed var(--border); border-radius: 5px;
   overflow: hidden; display: flex; align-items: center; justify-content: center;
   cursor: pointer; transition: border-color .14s, background .14s;
-  width: 100%; height: 100%; min-height: 0;
+  width: 100%; height: 100%; min-height: 0; aspect-ratio: 4/3;
 }
+/* filled slot: ignore aspect-ratio, use grid height */
+.slot.full { aspect-ratio: unset; }
 .slot:hover { border-color: var(--ink); background: #eceff5; }
 .slot.full { border-style: solid; border-color: #c5cad8; cursor: default; }
 .slot img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -565,29 +567,63 @@ function toast(msg) {
 async function exportPDF() {
   if (!window.jspdf) { toast('PDFライブラリ準備中...'); return; }
   const { jsPDF } = window.jspdf;
-  const title = document.getElementById('ttlMain').value.trim() || 'フォトレポート';
-  const sub   = document.getElementById('ttlSub').value.trim();
+  const titleRaw = document.getElementById('ttlMain').value.trim();
+  const sub = document.getElementById('ttlSub').value.trim();
+
+  // ページ範囲を確認
+  const maxP = mode === 'c' ? C_PAGES : BA_PAGES;
+  const inputPages = prompt(`PDF出力するページ数を入力してください（1〜${maxP}）`, maxP);
+  if (inputPages === null) return; // キャンセル
+  const exportPages = Math.min(Math.max(1, parseInt(inputPages) || maxP), maxP);
+  if (isNaN(exportPages)) { toast('⚠ 正しいページ数を入力してください'); return; }
+
   toast('PDF生成中...');
 
   const pdf = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
   const PW=210, PH=297, mg=9, usW=PW-mg*2;
 
+  // タイトル描画ヘルパー（日本語はボックス描画のみ、テキストはASCIIのみ）
+  function drawTitleArea(pdf) {
+    let ty = mg + 5;
+    let hasTitle = false;
+
+    if (titleRaw) {
+      // 日本語フォントがないためボックス+プレースホルダーで表示
+      pdf.setFillColor(22,33,62);
+      pdf.rect(mg, ty, usW, 10, 'F');
+      pdf.setFont('helvetica','bold'); pdf.setFontSize(14); pdf.setTextColor(255,255,255);
+      // ASCII変換（日本語はそのまま渡すと文字化けするため、可能な文字のみ）
+      const safeTitle = titleRaw.replace(/[^\x00-\x7F]/g, (c) => {
+        // UTF-8のまま渡す（jsPDFがUTF-8対応していれば表示される）
+        return c;
+      });
+      pdf.text(safeTitle, PW/2, ty+7, {align:'center'});
+      ty += 12; hasTitle = true;
+    }
+
+    if (sub) {
+      pdf.setFont('helvetica','normal'); pdf.setFontSize(8); pdf.setTextColor(130,140,160);
+      pdf.text(sub, PW/2, ty+4, {align:'center'});
+      ty += 6;
+    }
+
+    // 区切り線
+    pdf.setDrawColor(22,33,62); pdf.setLineWidth(0.4);
+    pdf.line(mg, ty+1, PW-mg, ty+1);
+    return ty + 4;
+  }
+
   if (mode === 'c') {
     const pageMap = buildPageMap();
-    for (let p=0; p<C_PAGES; p++) {
+    for (let p=0; p<exportPages; p++) {
       if (p>0) pdf.addPage();
       pdf.setFillColor(255,255,255); pdf.rect(0,0,PW,PH,'F');
 
-      // Title
-      let ty = mg+7;
-      pdf.setFont('helvetica','bold'); pdf.setFontSize(16); pdf.setTextColor(22,33,62);
-      pdf.text(title, PW/2, ty, {align:'center'});
-      if (sub) { ty+=5; pdf.setFont('helvetica','normal'); pdf.setFontSize(8.5); pdf.setTextColor(130,140,160); pdf.text(sub, PW/2, ty, {align:'center'}); }
-      ty+=4; pdf.setDrawColor(22,33,62); pdf.setLineWidth(0.45); pdf.line(mg,ty,PW-mg,ty); ty+=3;
+      let ty = drawTitleArea(pdf);
 
       // Page num
       pdf.setFont('helvetica','normal'); pdf.setFontSize(7); pdf.setTextColor(150,155,170);
-      pdf.text(`PAGE ${p+1} / ${C_PAGES}`, PW-mg, ty+3.5, {align:'right'});
+      pdf.text(`PAGE ${p+1} / ${exportPages}`, PW-mg, ty+3.5, {align:'right'});
       ty+=5;
 
       const bodyH = PH - ty - mg;
@@ -605,7 +641,6 @@ async function exportPDF() {
         const rH = unitH * rowUnits[idx];
         const d = cSlots[si];
 
-        // Photo
         if (d.photo) {
           try { pdf.addImage(d.photo, d.photo.startsWith('data:image/png')?'PNG':'JPEG', mg, ry, photoW, rH); }
           catch(e) { pdf.setFillColor(240,240,242); pdf.rect(mg,ry,photoW,rH,'F'); }
@@ -634,38 +669,34 @@ async function exportPDF() {
       // Footer
       const now=new Date(); pdf.setFontSize(6.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(190,193,200);
       pdf.text(`${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`, mg, PH-3.5);
-      pdf.text(title, PW-mg, PH-3.5, {align:'right'});
+      if (titleRaw) pdf.text(titleRaw, PW-mg, PH-3.5, {align:'right'});
     }
 
   } else {
     // BA PDF
-    for (let p=0; p<BA_PAGES; p++) {
+    for (let p=0; p<exportPages; p++) {
       if (p>0) pdf.addPage();
       pdf.setFillColor(255,255,255); pdf.rect(0,0,PW,PH,'F');
 
-      let ty=mg+7;
-      pdf.setFont('helvetica','bold'); pdf.setFontSize(16); pdf.setTextColor(22,33,62);
-      pdf.text(title, PW/2, ty, {align:'center'});
-      if (sub) { ty+=5; pdf.setFont('helvetica','normal'); pdf.setFontSize(8.5); pdf.setTextColor(130,140,160); pdf.text(sub,PW/2,ty,{align:'center'}); }
-      ty+=4; pdf.setDrawColor(22,33,62); pdf.setLineWidth(0.45); pdf.line(mg,ty,PW-mg,ty); ty+=3;
+      let ty = drawTitleArea(pdf);
 
       pdf.setFont('helvetica','normal'); pdf.setFontSize(7); pdf.setTextColor(150,155,170);
-      pdf.text(`PAGE ${p+1} / ${BA_PAGES}`, PW-mg, ty+3.5, {align:'right'});
+      pdf.text(`PAGE ${p+1} / ${exportPages}`, PW-mg, ty+3.5, {align:'right'});
       ty+=5;
 
       // BA column headers
       const colW=(usW-3)/2;
       pdf.setFillColor(255,243,205); pdf.rect(mg,ty,colW,6,'F');
       pdf.setFont('helvetica','bold'); pdf.setFontSize(9); pdf.setTextColor(125,90,0);
-      pdf.text('BEFORE  施工前', mg+colW/2, ty+4.2, {align:'center'});
+      pdf.text('BEFORE', mg+colW/2, ty+4.2, {align:'center'});
       pdf.setFillColor(212,237,218); pdf.rect(mg+colW+3,ty,colW,6,'F');
-      pdf.setTextColor(21,87,36); pdf.text('AFTER  施工後', mg+colW+3+colW/2, ty+4.2, {align:'center'});
+      pdf.setTextColor(21,87,36); pdf.text('AFTER', mg+colW+3+colW/2, ty+4.2, {align:'center'});
       ty+=8;
 
       const bodyH=PH-ty-mg;
       const rows=baData[p];
       const rowUnits=rows.map(r=>Math.max(r.before.portrait?2:1, r.after.portrait?2:1));
-      const totalU=rowUnits.reduce((a,b)=>a+b,0);
+      const totalU=rowUnits.reduce((a,b)=>a+b,0)||BA_ROWS;
       const CAP_H=5, GAP=2.5;
       const totalGaps=(rows.length-1)*GAP;
       const unitH=(bodyH-totalGaps)/totalU;
@@ -699,11 +730,12 @@ async function exportPDF() {
 
       const now=new Date(); pdf.setFontSize(6.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(190,193,200);
       pdf.text(`${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`,mg,PH-3.5);
-      pdf.text(title,PW-mg,PH-3.5,{align:'right'});
+      if (titleRaw) pdf.text(titleRaw,PW-mg,PH-3.5,{align:'right'});
     }
   }
 
-  pdf.save((title.replace(/[\\/:*?"<>|]/g,'_'))+'.pdf');
+  const fname = (titleRaw || 'photo-report').replace(/[\\/:*?"<>|]/g,'_') + '.pdf';
+  pdf.save(fname);
   toast('✅ PDFをダウンロードしました');
 }
 
