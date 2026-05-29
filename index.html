@@ -78,14 +78,13 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif; backg
   border: 1.5px dashed var(--border); border-radius: 5px;
   overflow: hidden; display: flex; align-items: center; justify-content: center;
   cursor: pointer; transition: border-color .14s, background .14s;
-  width: 100%; height: 100%; min-height: 0; aspect-ratio: 4/3;
+  width: 100%; min-height: 0; aspect-ratio: 4/3;
 }
-/* filled slot: ignore aspect-ratio, use grid height */
-.slot.full { aspect-ratio: unset; }
-.slot:hover { border-color: var(--ink); background: #eceff5; }
 .slot.full { border-style: solid; border-color: #c5cad8; cursor: default; }
+.slot.full.is-portrait { aspect-ratio: 3/4; }
+.slot:hover { border-color: var(--ink); background: #eceff5; }
 .slot img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.slot img.portrait { object-fit: contain; background: var(--slot); }
+.slot img.portrait { object-fit: contain; }
 .slot-ph { display: flex; flex-direction: column; align-items: center; gap: 3px; pointer-events: none; }
 .slot-ph svg { opacity: .28; }
 .slot-ph span { font-size: 9px; color: #aaa; text-align: center; line-height: 1.4; }
@@ -307,11 +306,8 @@ function renderCommentPage(container) {
 
     const row = document.createElement('div');
     row.className = 'prow prow-c';
-    if (idx > 0) row.style.marginTop = GAP + 'mm';
-    // Use grid-template-rows so children stretch to exact row height
-    row.style.gridTemplateRows = rowH + 'mm';
-    row.style.minHeight = '0';
-    row.style.alignItems = 'stretch';
+    if (idx > 0) row.style.marginTop = '3mm';
+    row.dataset.rowh = rowH; // store for print only
 
     // Photo slot
     const slot = mkSlot(cSlots[si].photo, cSlots[si].portrait, `${si+1}`,
@@ -379,10 +375,7 @@ function renderBAPage(container) {
     const rH = unitH * u;
     const row = document.createElement('div');
     row.className = 'prow prow-ba';
-    if (r > 0) row.style.marginTop = GAP + 'mm';
-    row.style.gridTemplateRows = rH + 'mm';
-    row.style.minHeight = '0';
-    row.style.alignItems = 'stretch';
+    if (r > 0) row.style.marginTop = '3mm';
 
     ['before','after'].forEach(side => {
       const d = rowData[side];
@@ -426,7 +419,7 @@ function renderBAPage(container) {
 // ── SLOT BUILDER ──
 function mkSlot(photo, portrait, label, onAdd, onRemove) {
   const el = document.createElement('div');
-  el.className = 'slot' + (photo ? ' full' : '');
+  el.className = 'slot' + (photo ? ' full' + (portrait ? ' is-portrait' : '') : '');
 
   if (photo) {
     const img = document.createElement('img');
