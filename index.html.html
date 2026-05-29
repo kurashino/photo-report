@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>フォトレポート</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink: #16213e; --gold: #e2c98a; --accent: #d4843a;
+  --bg: #dde1e9; --border: #cdd2e0; --muted: #8a90a0;
+  --slot: #f2f4f8; --cpanel: #f8f9fb;
+}
+body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif; background: var(--bg); }
+
+/* ── TOOLBAR ── */
+.tb {
+  position: sticky; top: 0; z-index: 200;
+  background: var(--ink); display: flex; align-items: center;
+  gap: 7px; padding: 8px 14px; flex-wrap: wrap;
+  box-shadow: 0 2px 16px rgba(0,0,0,.3);
+}
+.tb-title { font-size: 14px; font-weight: 700; color: var(--gold); letter-spacing: .05em; margin-right: auto; white-space: nowrap; }
+.ms { display: flex; background: rgba(255,255,255,.1); border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,.16); }
+.ms button { padding: 5px 11px; font-size: 12px; font-weight: 600; border: none; background: transparent; color: rgba(255,255,255,.6); cursor: pointer; font-family: inherit; transition: all .14s; white-space: nowrap; }
+.ms button.on { background: var(--accent); color: #fff; }
+.btn { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 6px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .14s; white-space: nowrap; }
+.btn:active { transform: scale(.96); }
+.btn-ghost { background: transparent; color: var(--gold); border: 1.5px solid rgba(226,201,138,.45); }
+.btn-ghost:hover { background: rgba(226,201,138,.1); }
+.btn-g { background: #27ae60; color: #fff; }
+.btn-g:hover { background: #219a52; }
+.btn-r { background: #c0392b; color: #fff; }
+.btn-r:hover { background: #a93226; }
+.pnav { display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,.08); border-radius: 6px; padding: 3px 9px; border: 1px solid rgba(255,255,255,.14); }
+.pnav span { font-size: 12px; color: rgba(255,255,255,.7); white-space: nowrap; }
+.pnav button { background: transparent; border: none; color: var(--gold); cursor: pointer; font-size: 17px; line-height: 1; padding: 0 1px; font-weight: 700; }
+.pnav button:hover { color: #fff; }
+.pnav input { width: 34px; text-align: center; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); border-radius: 4px; color: #fff; font-size: 12px; font-weight: 700; padding: 2px 3px; font-family: inherit; }
+.pnav input:focus { outline: none; }
+
+/* ── CANVAS ── */
+.wrap { padding: 20px 12px; display: flex; justify-content: center; min-height: calc(100vh - 52px); }
+
+/* ── A4 ── */
+.a4 {
+  background: #fff; width: 210mm; min-height: 297mm;
+  box-shadow: 0 6px 40px rgba(0,0,0,.2);
+  display: flex; flex-direction: column;
+  padding: 9mm 8mm 7mm;
+}
+
+/* ── TITLE ── */
+.ttl-row { margin-bottom: 3.5mm; border-bottom: 2px solid var(--ink); padding-bottom: 2.5mm; }
+.ttl-main { border: none; outline: none; font-size: 19px; font-weight: 800; color: var(--ink); background: transparent; text-align: center; font-family: inherit; letter-spacing: .03em; width: 100%; display: block; }
+.ttl-main::placeholder { color: #ccc; }
+.ttl-sub { border: none; outline: none; font-size: 10px; color: var(--muted); background: transparent; text-align: center; font-family: inherit; letter-spacing: .05em; width: 100%; display: block; margin-top: 2px; }
+.ttl-sub::placeholder { color: #ddd; }
+
+/* ── PAGE INFO ── */
+.pgbar { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 2.5mm; font-size: 7.5px; font-weight: 700; color: var(--muted); letter-spacing: .07em; }
+
+/* ── PHOTO BODY ── */
+.pbody { flex: 1; display: flex; flex-direction: column; }
+
+/* ── ROW ── */
+.prow { display: grid; gap: 3mm; }
+.prow + .prow { margin-top: 3mm; }
+/* comment mode: photo | comment */
+.prow-c { grid-template-columns: 52% 1fr; }
+/* BA mode: before | after */
+.prow-ba { grid-template-columns: 1fr 1fr; }
+
+/* ── PHOTO SLOT ── */
+.slot {
+  position: relative; background: var(--slot);
+  border: 1.5px dashed var(--border); border-radius: 5px;
+  overflow: hidden; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: border-color .14s, background .14s;
+  width: 100%; height: 100%; min-height: 0;
+}
+.slot:hover { border-color: var(--ink); background: #eceff5; }
+.slot.full { border-style: solid; border-color: #c5cad8; cursor: default; }
+.slot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.slot img.portrait { object-fit: contain; background: var(--slot); }
+.slot-ph { display: flex; flex-direction: column; align-items: center; gap: 3px; pointer-events: none; }
+.slot-ph svg { opacity: .28; }
+.slot-ph span { font-size: 9px; color: #aaa; text-align: center; line-height: 1.4; }
+.slot-rm {
+  position: absolute; top: 3px; right: 3px; width: 20px; height: 20px;
+  border-radius: 50%; background: rgba(192,57,43,.88); color: #fff;
+  border: none; cursor: pointer; font-size: 14px; font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .14s; line-height: 1;
+}
+.slot.full:hover .slot-rm { opacity: 1; }
+.slot-num {
+  position: absolute; bottom: 3px; left: 5px; font-size: 9px; font-weight: 700;
+  color: rgba(255,255,255,.9); text-shadow: 0 1px 3px rgba(0,0,0,.6); pointer-events: none;
+}
+
+/* ── COMMENT PANEL ── */
+.cpanel {
+  background: var(--cpanel); border: 1px solid var(--border);
+  border-radius: 5px; padding: 5px 7px;
+  display: flex; flex-direction: column;
+}
+.cpanel textarea {
+  flex: 1; width: 100%; border: none; outline: none;
+  background: transparent; font-size: 10px; line-height: 1.75;
+  color: #333; font-family: inherit; resize: none;
+}
+.cpanel textarea::placeholder { color: #ccc; }
+
+/* ── BA HEADERS ── */
+.ba-headers { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; margin-bottom: 2mm; }
+.ba-hdr { text-align: center; font-size: 10px; font-weight: 800; letter-spacing: .08em; padding: 2.5px 0; border-radius: 4px; }
+.ba-hdr.bef { background: #fff3cd; color: #7d5a00; }
+.ba-hdr.aft { background: #d4edda; color: #155724; }
+
+/* ── BA CELL ── */
+.ba-cell { display: flex; flex-direction: column; }
+.ba-cap { width: 100%; border: 1px solid var(--border); border-radius: 3px; margin-top: 1.5mm; padding: 3px 5px; font-size: 9px; font-family: inherit; color: #444; background: var(--cpanel); outline: none; resize: none; line-height: 1.5; }
+.ba-cap::placeholder { color: #ccc; }
+
+/* ── HIDDEN ── */
+#inp1, #inpM { display: none; }
+.drag-ov { display: none; position: fixed; inset: 0; z-index: 300; background: rgba(22,33,62,.78); color: var(--gold); font-size: 20px; font-weight: 800; align-items: center; justify-content: center; letter-spacing: .06em; }
+.drag-ov.on { display: flex; }
+.toast { position: fixed; bottom: 18px; right: 18px; background: var(--ink); color: var(--gold); padding: 8px 15px; border-radius: 7px; font-size: 12px; font-weight: 600; opacity: 0; transform: translateY(8px); transition: all .2s; z-index: 400; pointer-events: none; }
+.toast.show { opacity: 1; transform: translateY(0); }
+
+@media print {
+  .tb { display: none; }
+  .wrap { padding: 0; background: white; }
+  .a4 { box-shadow: none; width: 100%; }
+  .slot-rm { display: none; }
+  .slot { border-style: solid; }
+}
+@media (max-width: 640px) {
+  .wrap { padding: 8px 2px; }
+  .a4 { width: 100%; min-height: auto; padding: 5mm 4mm; }
+}
+</style>
+</head>
+<body>
+
+<div class="tb">
+  <span class="tb-title">📋 フォトレポート</span>
+  <div class="ms">
+    <button class="on" id="btnC" onclick="setMode('c')">写真＋コメント</button>
+    <button id="btnBA" onclick="setMode('ba')">ビフォーアフター</button>
+  </div>
+  <div class="pnav" id="pnav">
+    <button onclick="goPage(curPage-1)">‹</button>
+    <span>P</span>
+    <input type="number" id="pinput" value="1" min="1" max="25" onchange="goPage(+this.value-1)">
+    <span id="ptotal">/ 25</span>
+    <button onclick="goPage(curPage+1)">›</button>
+  </div>
+  <button class="btn btn-ghost" onclick="triggerBulk()">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    一括選択
+  </button>
+  <button class="btn btn-r" onclick="clearAll()">クリア</button>
+  <button class="btn btn-g" onclick="exportPDF()">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+    PDF出力
+  </button>
+  <button class="btn btn-ghost" onclick="window.print()">印刷</button>
+</div>
+
+<div class="drag-ov" id="dov">📷 ドロップして追加</div>
+
+<div class="wrap">
+  <div class="a4" id="a4">
+    <div class="ttl-row">
+      <input class="ttl-main" id="ttlMain" type="text" maxlength="60" placeholder="レポートタイトル" autocomplete="off" spellcheck="false">
+      <input class="ttl-sub"  id="ttlSub"  type="text" maxlength="80" placeholder="サブタイトル・日付・場所など" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="pgbar" id="pgbar"></div>
+    <div class="pbody" id="pbody"></div>
+  </div>
+</div>
+
+<input type="file" id="inp1" accept="image/*">
+<input type="file" id="inpM" accept="image/*" multiple>
+<div class="toast" id="toast"></div>
+
+<script>
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CONSTANTS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const C_PAGES   = 25;   // comment mode pages
+const C_ROWS    = 4;    // rows per page (max, reduces if portrait)
+const BA_ROWS   = 4;    // BA rows per page
+const BA_PAGES  = 25;   // BA pages
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// STATE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let mode    = 'c';
+let curPage = 0;
+
+// Comment mode: array of slot objects (dynamic, slots grow as needed)
+// Each slot: { photo, portrait, comment }
+// Pages are virtual: we pack slots into pages, 1 portrait = 2 units, 1 landscape = 1 unit, 4 units/page
+// Slots are indexed 0..N; we pre-allocate enough for 25 pages × 4 landscape = 100 slots
+const MAX_C = C_PAGES * C_ROWS; // 100 landscape-equivalent
+let cSlots = Array.from({length: MAX_C}, () => ({ photo: null, portrait: false, comment: '' }));
+
+// For display purposes we compute which slots appear on which page dynamically
+// Page layout: fill until 4 units used, a portrait takes 2 units
+// But we want EXACTLY 4 visual rows per page regardless → NO.
+// Requirement: portrait shows full size, page may have fewer rows (e.g. 3 if one portrait, 2 if two portraits)
+// Slots are sequential; we pack them page by page.
+
+// Compute page → slot mapping
+function buildPageMap() {
+  // Returns array of pages; each page = array of slot indices
+  const pages = [];
+  let si = 0;
+  while (pages.length < C_PAGES && si < MAX_C) {
+    const page = [];
+    let units = 0;
+    while (units < 4 && si < MAX_C) {
+      const u = cSlots[si].portrait ? 2 : 1;
+      if (units + u > 4) break; // can't fit, stop page here
+      page.push(si);
+      units += u;
+      si++;
+    }
+    if (page.length === 0) { si++; continue; } // skip if stuck (shouldn't happen)
+    pages.push(page);
+  }
+  return pages;
+}
+
+// BA mode: page × row × {before, after, cap_before, cap_after}
+let baData = Array.from({length: BA_PAGES}, () =>
+  Array.from({length: BA_ROWS}, () => ({
+    before: { photo: null, portrait: false },
+    after:  { photo: null, portrait: false },
+    capB: '', capA: ''
+  }))
+);
+
+let pending = null; // { type:'c'|'ba', si?, page?, row?, side? }
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// NAVIGATION
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function maxPage() { return mode === 'c' ? C_PAGES : BA_PAGES; }
+
+function goPage(p) {
+  p = Math.max(0, Math.min(maxPage()-1, p));
+  curPage = p;
+  document.getElementById('pinput').value = p+1;
+  renderPage();
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// RENDER
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function renderPage() {
+  const pnav = document.getElementById('pnav');
+  const pgbar = document.getElementById('pgbar');
+  const pbody = document.getElementById('pbody');
+  pbody.innerHTML = '';
+
+  pnav.style.display = 'flex';
+  document.getElementById('ptotal').textContent = `/ ${maxPage()}`;
+
+  if (mode === 'c') {
+    pgbar.textContent = `PAGE ${curPage+1} / ${C_PAGES}`;
+    renderCommentPage(pbody);
+  } else {
+    pgbar.textContent = `PAGE ${curPage+1} / ${BA_PAGES}`;
+    renderBAPage(pbody);
+  }
+}
+
+// ── COMMENT MODE ──
+function renderCommentPage(container) {
+  const pageMap = buildPageMap();
+  const slotIndices = pageMap[curPage] || [];
+
+  // body height available (mm): A4=297, top margin 9, bot 7 → 281
+  // title area ~18mm, pgbar ~5mm → body = 281-18-5 = 258mm (approx)
+  // We use CSS flex with flex values proportional to units
+  const bodyMM = 253;
+  const GAP = 3; // mm between rows
+
+  // Calculate units
+  const units = slotIndices.map(si => cSlots[si].portrait ? 2 : 1);
+  const totalUnits = units.reduce((a,b) => a+b, 0) || 4;
+  const totalGaps = (slotIndices.length - 1) * GAP;
+  const unitH = (bodyMM - totalGaps) / totalUnits;
+
+  const frag = document.createDocumentFragment();
+  slotIndices.forEach((si, idx) => {
+    const u = units[idx];
+    const rowH = unitH * u;
+
+    const row = document.createElement('div');
+    row.className = 'prow prow-c';
+    if (idx > 0) row.style.marginTop = GAP + 'mm';
+    // Use grid-template-rows so children stretch to exact row height
+    row.style.gridTemplateRows = rowH + 'mm';
+    row.style.minHeight = '0';
+    row.style.alignItems = 'stretch';
+
+    // Photo slot
+    const slot = mkSlot(cSlots[si].photo, cSlots[si].portrait, `${si+1}`,
+      () => { pending = {type:'c', si}; trig1(); },
+      () => { cSlots[si].photo = null; cSlots[si].portrait = false; renderPage(); }
+    );
+    row.appendChild(slot);
+
+    // Comment panel
+    const cp = document.createElement('div');
+    cp.className = 'cpanel';
+    const ta = document.createElement('textarea');
+    ta.placeholder = 'コメント・所見・改善点など...';
+    ta.value = cSlots[si].comment;
+    ta.dataset.si = si;
+    ta.addEventListener('input', e => { cSlots[+e.target.dataset.si].comment = e.target.value; });
+    cp.appendChild(ta);
+    row.appendChild(cp);
+
+    frag.appendChild(row);
+  });
+
+  // Empty placeholder rows if page is empty
+  if (slotIndices.length === 0) {
+    const msg = document.createElement('div');
+    msg.style.cssText = 'flex:1;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:12px;';
+    msg.textContent = '写真を追加してください';
+    frag.appendChild(msg);
+  }
+
+  container.appendChild(frag);
+}
+
+// ── BA MODE ──
+function renderBAPage(container) {
+  // Headers
+  const hdrs = document.createElement('div');
+  hdrs.className = 'ba-headers';
+  hdrs.innerHTML = '<div class="ba-hdr bef">BEFORE　施工前</div><div class="ba-hdr aft">AFTER　施工後</div>';
+  container.appendChild(hdrs);
+
+  const bodyMM = 245;
+  const GAP = 3;
+  const allRows = baData[curPage];
+
+  // Pack rows until 4 units used (portrait row = 2 units, landscape = 1)
+  const rows = [];
+  let totalUnits = 0;
+  for (let i = 0; i < allRows.length; i++) {
+    const u = Math.max(
+      allRows[i].before.portrait ? 2 : 1,
+      allRows[i].after.portrait  ? 2 : 1
+    );
+    if (totalUnits + u > 4) break;
+    rows.push({ data: allRows[i], u, i });
+    totalUnits += u;
+    if (totalUnits >= 4) break;
+  }
+  if (totalUnits === 0) totalUnits = 4;
+
+  const totalGaps = (rows.length - 1) * GAP;
+  const unitH = (bodyMM - totalGaps) / totalUnits;
+
+  rows.forEach(({ data: rowData, u, i: ri }, r) => {
+    const rH = unitH * u;
+    const row = document.createElement('div');
+    row.className = 'prow prow-ba';
+    if (r > 0) row.style.marginTop = GAP + 'mm';
+    row.style.gridTemplateRows = rH + 'mm';
+    row.style.minHeight = '0';
+    row.style.alignItems = 'stretch';
+
+    ['before','after'].forEach(side => {
+      const d = rowData[side];
+      const cell = document.createElement('div');
+      cell.className = 'ba-cell';
+      cell.style.cssText = 'display:flex; flex-direction:column; min-height:0;';
+
+      const slotWrap = document.createElement('div');
+      slotWrap.style.cssText = 'flex:1; min-height:0; overflow:hidden; border-radius:5px; display:flex;';
+
+      const slotEl = mkSlot(d.photo, d.portrait,
+        side === 'before' ? `B${ri+1}` : `A${ri+1}`,
+        () => { pending = {type:'ba', page:curPage, r:ri, side}; trig1(); },
+        () => { baData[curPage][ri][side].photo = null; baData[curPage][ri][side].portrait = false; renderPage(); }
+      );
+      slotEl.style.cssText = 'flex:1; min-height:0; width:100%;';
+      slotWrap.appendChild(slotEl);
+
+      // caption below photo
+      const cap = document.createElement('textarea');
+      cap.className = 'ba-cap';
+      cap.rows = 1;
+      cap.placeholder = side === 'before' ? '施工前コメント' : '施工後コメント';
+      cap.value = side === 'before' ? rowData.capB : rowData.capA;
+      cap.dataset.r = ri; cap.dataset.side = side;
+      cap.addEventListener('input', e => {
+        const rr = +e.target.dataset.r, ss = e.target.dataset.side;
+        if (ss === 'before') baData[curPage][rr].capB = e.target.value;
+        else                  baData[curPage][rr].capA = e.target.value;
+      });
+
+      cell.appendChild(slotWrap);
+      cell.appendChild(cap);
+      row.appendChild(cell);
+    });
+
+    container.appendChild(row);
+  });
+}
+
+// ── SLOT BUILDER ──
+function mkSlot(photo, portrait, label, onAdd, onRemove) {
+  const el = document.createElement('div');
+  el.className = 'slot' + (photo ? ' full' : '');
+
+  if (photo) {
+    const img = document.createElement('img');
+    img.src = photo; img.alt = label;
+    if (portrait) { img.className = 'portrait'; }
+    el.appendChild(img);
+    const num = document.createElement('div');
+    num.className = 'slot-num'; num.textContent = label;
+    el.appendChild(num);
+    const rm = document.createElement('button');
+    rm.className = 'slot-rm'; rm.innerHTML = '×'; rm.title = '削除';
+    rm.onclick = e => { e.stopPropagation(); onRemove(); };
+    el.appendChild(rm);
+  } else {
+    el.innerHTML = `<div class="slot-ph"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="1.4"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>タップして<br>追加</span></div>`;
+    el.onclick = onAdd;
+  }
+  return el;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// FILE INPUT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function trig1() { const i = document.getElementById('inp1'); i.value=''; i.click(); }
+function triggerBulk() { const i = document.getElementById('inpM'); i.value=''; i.click(); }
+
+document.getElementById('inp1').addEventListener('change', function() {
+  const f = this.files[0]; if (!f || !pending) return;
+  readImg(f, (url, w, h) => {
+    const port = h > w;
+    if (pending.type === 'c') {
+      cSlots[pending.si].photo = url;
+      cSlots[pending.si].portrait = port;
+    } else {
+      const d = baData[pending.page][pending.r][pending.side];
+      d.photo = url; d.portrait = port;
+    }
+    renderPage();
+    toast('追加しました' + (port ? '（縦写真）' : ''));
+  });
+});
+
+document.getElementById('inpM').addEventListener('change', function() {
+  const files = Array.from(this.files); if (!files.length) return;
+  if (mode === 'ba') { toast('一括選択は写真＋コメントモードのみ'); return; }
+
+  const empty = cSlots.map((s,i) => s.photo===null?i:-1).filter(i=>i>=0);
+  if (!empty.length) { toast('⚠ スロットがいっぱいです'); return; }
+  const take = Math.min(files.length, empty.length);
+  let done = 0, firstSi = empty[0];
+  for (let i = 0; i < take; i++) {
+    const si = empty[i];
+    readImg(files[i], (url, w, h) => {
+      cSlots[si].photo = url; cSlots[si].portrait = h > w;
+      done++;
+      if (done === take) {
+        // Navigate to page containing firstSi
+        const pm = buildPageMap();
+        const pg = pm.findIndex(p => p.includes(firstSi));
+        goPage(pg >= 0 ? pg : 0);
+        toast(`${take}枚追加しました`);
+      }
+    });
+  }
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// DRAG & DROP
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let dc = 0;
+document.addEventListener('dragenter', e => { if (e.dataTransfer.types.includes('Files')) { dc++; document.getElementById('dov').classList.add('on'); }});
+document.addEventListener('dragleave', () => { if (--dc <= 0) { dc=0; document.getElementById('dov').classList.remove('on'); }});
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', e => {
+  e.preventDefault(); dc=0; document.getElementById('dov').classList.remove('on');
+  const files = Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/'));
+  if (!files.length) return;
+  const empty = cSlots.map((s,i)=>s.photo===null?i:-1).filter(i=>i>=0);
+  const take = Math.min(files.length, empty.length);
+  if (!take) { toast('⚠ スロットがいっぱいです'); return; }
+  let done=0;
+  for (let i=0;i<take;i++) {
+    readImg(files[i],(url,w,h)=>{
+      cSlots[empty[i]].photo=url; cSlots[empty[i]].portrait=h>w;
+      if(++done===take){ const pm=buildPageMap(); const pg=pm.findIndex(p=>p.includes(empty[0])); goPage(pg>=0?pg:0); toast(`${take}枚追加`); }
+    });
+  }
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// MODE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function setMode(m) {
+  mode = m;
+  document.getElementById('btnC').classList.toggle('on', m==='c');
+  document.getElementById('btnBA').classList.toggle('on', m==='ba');
+  curPage = 0;
+  document.getElementById('pinput').value = 1;
+  renderPage();
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CLEAR
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function clearAll() {
+  if (!confirm('全データをクリアしますか？')) return;
+  cSlots = Array.from({length: MAX_C}, () => ({photo:null,portrait:false,comment:''}));
+  baData = Array.from({length:BA_PAGES}, ()=>Array.from({length:BA_ROWS},()=>({before:{photo:null,portrait:false},after:{photo:null,portrait:false},capB:'',capA:''})));
+  document.getElementById('ttlMain').value = '';
+  document.getElementById('ttlSub').value = '';
+  curPage = 0;
+  document.getElementById('pinput').value = 1;
+  renderPage();
+  toast('クリアしました');
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// HELPERS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function readImg(file, cb) {
+  const r = new FileReader();
+  r.onload = e => {
+    const img = new Image();
+    img.onload = () => cb(e.target.result, img.naturalWidth, img.naturalHeight);
+    img.src = e.target.result;
+  };
+  r.readAsDataURL(file);
+}
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(el._t); el._t = setTimeout(()=>el.classList.remove('show'), 2400);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// PDF EXPORT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+async function exportPDF() {
+  if (!window.jspdf) { toast('PDFライブラリ準備中...'); return; }
+  const { jsPDF } = window.jspdf;
+  const title = document.getElementById('ttlMain').value.trim() || 'フォトレポート';
+  const sub   = document.getElementById('ttlSub').value.trim();
+  toast('PDF生成中...');
+
+  const pdf = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
+  const PW=210, PH=297, mg=9, usW=PW-mg*2;
+
+  if (mode === 'c') {
+    const pageMap = buildPageMap();
+    for (let p=0; p<C_PAGES; p++) {
+      if (p>0) pdf.addPage();
+      pdf.setFillColor(255,255,255); pdf.rect(0,0,PW,PH,'F');
+
+      // Title
+      let ty = mg+7;
+      pdf.setFont('helvetica','bold'); pdf.setFontSize(16); pdf.setTextColor(22,33,62);
+      pdf.text(title, PW/2, ty, {align:'center'});
+      if (sub) { ty+=5; pdf.setFont('helvetica','normal'); pdf.setFontSize(8.5); pdf.setTextColor(130,140,160); pdf.text(sub, PW/2, ty, {align:'center'}); }
+      ty+=4; pdf.setDrawColor(22,33,62); pdf.setLineWidth(0.45); pdf.line(mg,ty,PW-mg,ty); ty+=3;
+
+      // Page num
+      pdf.setFont('helvetica','normal'); pdf.setFontSize(7); pdf.setTextColor(150,155,170);
+      pdf.text(`PAGE ${p+1} / ${C_PAGES}`, PW-mg, ty+3.5, {align:'right'});
+      ty+=5;
+
+      const bodyH = PH - ty - mg;
+      const slots = pageMap[p] || [];
+      if (!slots.length) continue;
+
+      const rowUnits = slots.map(si => cSlots[si].portrait ? 2 : 1);
+      const totalU = rowUnits.reduce((a,b)=>a+b,0);
+      const GAP=2.5, totalGaps=(slots.length-1)*GAP;
+      const unitH=(bodyH-totalGaps)/totalU;
+      const photoW=usW*0.52, cX=mg+photoW+3, cW=usW-photoW-3;
+
+      let ry=ty;
+      slots.forEach((si, idx) => {
+        const rH = unitH * rowUnits[idx];
+        const d = cSlots[si];
+
+        // Photo
+        if (d.photo) {
+          try { pdf.addImage(d.photo, d.photo.startsWith('data:image/png')?'PNG':'JPEG', mg, ry, photoW, rH); }
+          catch(e) { pdf.setFillColor(240,240,242); pdf.rect(mg,ry,photoW,rH,'F'); }
+          pdf.setFont('helvetica','bold'); pdf.setFontSize(7); pdf.setTextColor(255,255,255);
+          pdf.text(`${si+1}`, mg+1.5, ry+rH-1.5);
+        } else {
+          pdf.setFillColor(242,244,248); pdf.rect(mg,ry,photoW,rH,'F');
+          pdf.setDrawColor(208,213,226); pdf.setLineWidth(0.2); pdf.rect(mg,ry,photoW,rH,'S');
+          pdf.setFont('helvetica','normal'); pdf.setFontSize(8); pdf.setTextColor(180,183,195);
+          pdf.text(`${si+1}`, mg+photoW/2, ry+rH/2, {align:'center'});
+        }
+
+        // Comment
+        pdf.setFillColor(248,249,251); pdf.rect(cX,ry,cW,rH,'F');
+        pdf.setDrawColor(208,213,226); pdf.setLineWidth(0.2); pdf.rect(cX,ry,cW,rH,'S');
+        if (d.comment) {
+          pdf.setFont('helvetica','normal'); pdf.setFontSize(8.5); pdf.setTextColor(50,55,65);
+          const lines = pdf.splitTextToSize(d.comment, cW-4);
+          let lY=ry+5;
+          lines.forEach(l=>{ if(lY<ry+rH-2){ pdf.text(l,cX+2,lY); lY+=4.2; } });
+        }
+
+        ry += rH + (idx<slots.length-1?GAP:0);
+      });
+
+      // Footer
+      const now=new Date(); pdf.setFontSize(6.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(190,193,200);
+      pdf.text(`${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`, mg, PH-3.5);
+      pdf.text(title, PW-mg, PH-3.5, {align:'right'});
+    }
+
+  } else {
+    // BA PDF
+    for (let p=0; p<BA_PAGES; p++) {
+      if (p>0) pdf.addPage();
+      pdf.setFillColor(255,255,255); pdf.rect(0,0,PW,PH,'F');
+
+      let ty=mg+7;
+      pdf.setFont('helvetica','bold'); pdf.setFontSize(16); pdf.setTextColor(22,33,62);
+      pdf.text(title, PW/2, ty, {align:'center'});
+      if (sub) { ty+=5; pdf.setFont('helvetica','normal'); pdf.setFontSize(8.5); pdf.setTextColor(130,140,160); pdf.text(sub,PW/2,ty,{align:'center'}); }
+      ty+=4; pdf.setDrawColor(22,33,62); pdf.setLineWidth(0.45); pdf.line(mg,ty,PW-mg,ty); ty+=3;
+
+      pdf.setFont('helvetica','normal'); pdf.setFontSize(7); pdf.setTextColor(150,155,170);
+      pdf.text(`PAGE ${p+1} / ${BA_PAGES}`, PW-mg, ty+3.5, {align:'right'});
+      ty+=5;
+
+      // BA column headers
+      const colW=(usW-3)/2;
+      pdf.setFillColor(255,243,205); pdf.rect(mg,ty,colW,6,'F');
+      pdf.setFont('helvetica','bold'); pdf.setFontSize(9); pdf.setTextColor(125,90,0);
+      pdf.text('BEFORE  施工前', mg+colW/2, ty+4.2, {align:'center'});
+      pdf.setFillColor(212,237,218); pdf.rect(mg+colW+3,ty,colW,6,'F');
+      pdf.setTextColor(21,87,36); pdf.text('AFTER  施工後', mg+colW+3+colW/2, ty+4.2, {align:'center'});
+      ty+=8;
+
+      const bodyH=PH-ty-mg;
+      const rows=baData[p];
+      const rowUnits=rows.map(r=>Math.max(r.before.portrait?2:1, r.after.portrait?2:1));
+      const totalU=rowUnits.reduce((a,b)=>a+b,0);
+      const CAP_H=5, GAP=2.5;
+      const totalGaps=(rows.length-1)*GAP;
+      const unitH=(bodyH-totalGaps)/totalU;
+
+      let ry=ty;
+      rows.forEach((rd, r)=>{
+        const rH=unitH*rowUnits[r];
+        const imgH=rH-CAP_H-1;
+
+        ['before','after'].forEach((side,ci)=>{
+          const x=mg+ci*(colW+3);
+          const d=rd[side];
+          if (d.photo) {
+            try { pdf.addImage(d.photo,d.photo.startsWith('data:image/png')?'PNG':'JPEG',x,ry,colW,imgH); }
+            catch(e){ pdf.setFillColor(240,240,242); pdf.rect(x,ry,colW,imgH,'F'); }
+          } else {
+            pdf.setFillColor(242,244,248); pdf.rect(x,ry,colW,imgH,'F');
+            pdf.setDrawColor(208,213,226); pdf.setLineWidth(0.2); pdf.rect(x,ry,colW,imgH,'S');
+            pdf.setFont('helvetica','normal'); pdf.setFontSize(8); pdf.setTextColor(180,183,195);
+            pdf.text(side==='before'?`B${r+1}`:`A${r+1}`, x+colW/2, ry+imgH/2, {align:'center'});
+          }
+          const cap=side==='before'?rd.capB:rd.capA;
+          if (cap) {
+            pdf.setFont('helvetica','normal'); pdf.setFontSize(7.5); pdf.setTextColor(60,65,80);
+            const cl=pdf.splitTextToSize(cap,colW);
+            pdf.text(cl[0],x,ry+imgH+4);
+          }
+        });
+        ry+=rH+(r<rows.length-1?GAP:0);
+      });
+
+      const now=new Date(); pdf.setFontSize(6.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(190,193,200);
+      pdf.text(`${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`,mg,PH-3.5);
+      pdf.text(title,PW-mg,PH-3.5,{align:'right'});
+    }
+  }
+
+  pdf.save((title.replace(/[\\/:*?"<>|]/g,'_'))+'.pdf');
+  toast('✅ PDFをダウンロードしました');
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// INIT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+renderPage();
+</script>
+</body>
+</html>
