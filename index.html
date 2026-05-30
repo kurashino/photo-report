@@ -11,7 +11,6 @@
 body{font-family:'Noto Sans JP',sans-serif;background:#dde1e9;}
 input,textarea,button{font-family:'Noto Sans JP',sans-serif;}
 
-/* TOOLBAR */
 .tb{position:sticky;top:0;z-index:200;background:#16213e;display:flex;align-items:center;gap:7px;padding:8px 14px;flex-wrap:wrap;box-shadow:0 2px 16px rgba(0,0,0,.3);}
 .tb-title{font-size:14px;font-weight:700;color:#e2c98a;letter-spacing:.05em;margin-right:auto;white-space:nowrap;}
 .ms{display:flex;background:rgba(255,255,255,.1);border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,.16);}
@@ -20,7 +19,6 @@ input,textarea,button{font-family:'Noto Sans JP',sans-serif;}
 .btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .14s;white-space:nowrap;}
 .btn:active{transform:scale(.96);}
 .btn-ghost{background:transparent;color:#e2c98a;border:1.5px solid rgba(226,201,138,.45);}
-.btn-ghost:hover{background:rgba(226,201,138,.1);}
 .btn-g{background:#27ae60;color:#fff;}
 .btn-r{background:#c0392b;color:#fff;}
 .pnav{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.08);border-radius:6px;padding:3px 9px;border:1px solid rgba(255,255,255,.14);}
@@ -29,40 +27,30 @@ input,textarea,button{font-family:'Noto Sans JP',sans-serif;}
 .pnav input{width:34px;text-align:center;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:4px;color:#fff;font-size:12px;font-weight:700;padding:2px 3px;font-family:inherit;}
 .pnav input:focus{outline:none;}
 
-/* CANVAS */
 .wrap{padding:20px 12px;display:flex;justify-content:center;min-height:calc(100vh - 52px);}
-
-/* A4 */
 .a4{background:#fff;width:210mm;min-height:297mm;box-shadow:0 6px 40px rgba(0,0,0,.2);display:flex;flex-direction:column;padding:9mm 8mm 7mm;}
 
-/* TITLE */
 .ttl-row{margin-bottom:3.5mm;border-bottom:2px solid #16213e;padding-bottom:2.5mm;}
-.ttl-main{border:none;outline:none;font-size:19px;font-weight:800;color:#16213e;background:transparent;text-align:center;font-family:inherit;letter-spacing:.03em;width:100%;display:block;}
+.ttl-main{border:none;outline:none;font-size:19px;font-weight:800;color:#16213e;background:transparent;text-align:center;font-family:inherit;width:100%;display:block;}
 .ttl-main::placeholder{color:#ccc;}
-.ttl-sub{border:none;outline:none;font-size:10px;color:#8a90a0;background:transparent;text-align:center;font-family:inherit;letter-spacing:.05em;width:100%;display:block;margin-top:2px;}
+.ttl-sub{border:none;outline:none;font-size:10px;color:#8a90a0;background:transparent;text-align:center;font-family:inherit;width:100%;display:block;margin-top:2px;}
 .ttl-sub::placeholder{color:#ddd;}
-
-/* PAGE BAR */
-.pgbar{display:flex;justify-content:flex-end;margin-bottom:2.5mm;font-size:7.5px;font-weight:700;color:#8a90a0;letter-spacing:.07em;}
-
-/* PHOTO BODY */
+.pgbar{display:flex;justify-content:flex-end;margin-bottom:2.5mm;font-size:7.5px;font-weight:700;color:#8a90a0;}
 .pbody{flex:1;display:flex;flex-direction:column;}
 
-/* ROW - comment mode: photo | comment */
-.prow-c{display:grid;grid-template-columns:52% 1fr;gap:3mm;align-items:stretch;}
+/* 行：写真 | コメント */
+.prow-c{display:grid;grid-template-columns:52% 1fr;gap:3mm;min-height:0;}
 .prow-c+.prow-c{margin-top:3mm;}
-
-/* ROW - BA mode */
-.prow-ba{display:grid;grid-template-columns:1fr 1fr;gap:3mm;align-items:stretch;}
+/* 行：before | after */
+.prow-ba{display:grid;grid-template-columns:1fr 1fr;gap:3mm;min-height:0;}
 .prow-ba+.prow-ba{margin-top:3mm;}
 
-/* SLOT */
-.slot{position:relative;background:#f2f4f8;border:1.5px dashed #cdd2e0;border-radius:5px;overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color .14s;width:100%;aspect-ratio:4/3;}
+/* スロット - 写真なし */
+.slot{position:relative;background:#f2f4f8;border:1.5px dashed #cdd2e0;border-radius:5px;overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer;aspect-ratio:4/3;width:100%;}
 .slot:hover{border-color:#16213e;}
-.slot.full{border-style:solid;border-color:#c5cad8;cursor:default;background:#f2f4f8;aspect-ratio:unset;height:100%;}
-.slot.full.is-p{aspect-ratio:unset;}
-.slot img{width:100%;height:100%;object-fit:cover;display:block;}
-.slot img.portrait{object-fit:contain;}
+/* 写真あり：高さはgridが決める */
+.slot.full{border-style:solid;border-color:#c5cad8;cursor:default;aspect-ratio:unset;height:100%;}
+.slot img{width:100%;height:100%;object-fit:contain;display:block;background:#f2f4f8;}
 .slot-ph{display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none;}
 .slot-ph svg{opacity:.28;}
 .slot-ph span{font-size:9px;color:#aaa;text-align:center;line-height:1.4;}
@@ -70,22 +58,19 @@ input,textarea,button{font-family:'Noto Sans JP',sans-serif;}
 .slot.full:hover .slot-rm{opacity:1;}
 .slot-num{position:absolute;bottom:3px;left:5px;font-size:9px;font-weight:700;color:rgba(255,255,255,.9);text-shadow:0 1px 3px rgba(0,0,0,.6);pointer-events:none;}
 
-/* COMMENT PANEL */
 .cpanel{background:#f8f9fb;border:1px solid #cdd2e0;border-radius:5px;padding:5px 7px;display:flex;flex-direction:column;height:100%;}
 .cpanel textarea{flex:1;width:100%;border:none;outline:none;background:transparent;font-size:10px;line-height:1.75;color:#333;font-family:inherit;resize:none;}
 .cpanel textarea::placeholder{color:#ccc;}
 
-/* BA */
 .ba-headers{display:grid;grid-template-columns:1fr 1fr;gap:3mm;margin-bottom:2mm;}
 .ba-hdr{text-align:center;font-size:10px;font-weight:800;letter-spacing:.08em;padding:2.5px 0;border-radius:4px;}
 .ba-hdr.bef{background:#fff3cd;color:#7d5a00;}
 .ba-hdr.aft{background:#d4edda;color:#155724;}
 .ba-cell{display:flex;flex-direction:column;height:100%;}
-.ba-slot-wrap{flex:1;min-height:0;}
+.ba-slot-wrap{flex:1;min-height:0;display:flex;}
 .ba-cap{width:100%;border:1px solid #cdd2e0;border-radius:3px;margin-top:1.5mm;padding:3px 5px;font-size:9px;font-family:inherit;color:#444;background:#f8f9fb;outline:none;resize:none;line-height:1.5;}
 .ba-cap::placeholder{color:#ccc;}
 
-/* MISC */
 #inp1,#inpM{display:none;}
 .drag-ov{display:none;position:fixed;inset:0;z-index:300;background:rgba(22,33,62,.78);color:#e2c98a;font-size:20px;font-weight:800;align-items:center;justify-content:center;}
 .drag-ov.on{display:flex;}
@@ -97,16 +82,11 @@ input,textarea,button{font-family:'Noto Sans JP',sans-serif;}
   .a4{width:100%;min-height:auto;padding:5mm 4mm;}
 }
 @media print{
-  .tb{display:none;}
-  .wrap{padding:0;background:white;}
-  .a4{box-shadow:none;width:100%;}
-  .slot-rm{display:none;}
-  .slot{border-style:solid;}
+  .tb{display:none;}.wrap{padding:0;background:white;}.a4{box-shadow:none;width:100%;}.slot-rm{display:none;}.slot{border-style:solid;}
 }
 </style>
 </head>
 <body>
-
 <div class="tb">
   <span class="tb-title">📋 フォトレポート</span>
   <div class="ms">
@@ -125,9 +105,7 @@ input,textarea,button{font-family:'Noto Sans JP',sans-serif;}
   <button class="btn btn-g" onclick="exportPDF()">PDF出力</button>
   <button class="btn btn-ghost" onclick="window.print()">印刷</button>
 </div>
-
 <div class="drag-ov" id="dov">📷 ドロップして追加</div>
-
 <div class="wrap">
   <div class="a4" id="a4">
     <div class="ttl-row">
@@ -138,159 +116,236 @@ input,textarea,button{font-family:'Noto Sans JP',sans-serif;}
     <div class="pbody" id="pbody"></div>
   </div>
 </div>
-
 <input type="file" id="inp1" accept="image/*">
 <input type="file" id="inpM" accept="image/*" multiple>
 <div class="toast" id="toast"></div>
 
 <script>
-// ===== CONSTANTS =====
-const C_PAGES = 25, C_ROWS = 4, BA_PAGES = 25, BA_ROWS = 4;
-const MAX_C = C_PAGES * C_ROWS;
-
-// ===== STATE =====
-let mode = 'c', curPage = 0;
-let cSlots = Array.from({length:MAX_C}, ()=>({photo:null,portrait:false,comment:''}));
-let baData = Array.from({length:BA_PAGES}, ()=>
-  Array.from({length:BA_ROWS}, ()=>({before:{photo:null,portrait:false},after:{photo:null,portrait:false},capB:'',capA:''}))
+const C_PAGES=25, C_ROWS=4, BA_PAGES=25, BA_ROWS=4, MAX_C=C_PAGES*C_ROWS;
+let mode='c', curPage=0;
+let cSlots=Array.from({length:MAX_C},()=>({photo:null,portrait:false,comment:'',normalizedUrl:null}));
+let baData=Array.from({length:BA_PAGES},()=>
+  Array.from({length:BA_ROWS},()=>({
+    before:{photo:null,portrait:false,normalizedUrl:null},
+    after:{photo:null,portrait:false,normalizedUrl:null},
+    capB:'',capA:''
+  }))
 );
-let pending = null;
+let pending=null;
 
-// ===== PAGE MAP =====
-function buildPageMap() {
-  const pages = [];
-  let si = 0;
-  while (pages.length < C_PAGES && si < MAX_C) {
-    const page = [];
-    let units = 0;
-    while (si < MAX_C && units < 4) {
-      const u = cSlots[si].portrait ? 2 : 1;
-      if (units + u > 4) break;
-      page.push(si); units += u; si++;
+// =============================================
+// EXIF回転を正規化してcanvasに描画した正しいdataURLを返す
+// =============================================
+function normalizeImage(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const url = e.target.result;
+      const img = new Image();
+      img.onload = () => {
+        // EXIFから回転情報を取得
+        getExifOrientation(e.target.result, orientation => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const w = img.naturalWidth, h = img.naturalHeight;
+          
+          // orientation に応じてcanvasサイズと変換を設定
+          if (orientation >= 5 && orientation <= 8) {
+            canvas.width = h; canvas.height = w;
+          } else {
+            canvas.width = w; canvas.height = h;
+          }
+          
+          ctx.save();
+          switch(orientation) {
+            case 2: ctx.transform(-1,0,0,1,w,0); break;
+            case 3: ctx.transform(-1,0,0,-1,w,h); break;
+            case 4: ctx.transform(1,0,0,-1,0,h); break;
+            case 5: ctx.transform(0,1,1,0,0,0); break;
+            case 6: ctx.transform(0,1,-1,0,h,0); break;
+            case 7: ctx.transform(0,-1,-1,0,h,w); break;
+            case 8: ctx.transform(0,-1,1,0,0,w); break;
+            default: break;
+          }
+          ctx.drawImage(img, 0, 0);
+          ctx.restore();
+          
+          const normalized = canvas.toDataURL('image/jpeg', 0.92);
+          const isPortrait = canvas.height > canvas.width;
+          resolve({ url, normalized, portrait: isPortrait });
+        });
+      };
+      img.src = url;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function getExifOrientation(dataUrl, callback) {
+  try {
+    // base64からバイナリに変換
+    const base64 = dataUrl.split(',')[1];
+    const binary = atob(base64);
+    const buf = new Uint8Array(binary.length);
+    for (let i=0;i<binary.length;i++) buf[i]=binary.charCodeAt(i);
+    
+    // JPEGかチェック
+    if (buf[0]!==0xFF||buf[1]!==0xD8) { callback(1); return; }
+    
+    let offset=2;
+    while (offset<buf.length) {
+      if (buf[offset]!==0xFF) break;
+      const marker=buf[offset+1];
+      const len=(buf[offset+2]<<8)|buf[offset+3];
+      if (marker===0xE1) { // APP1 = EXIF
+        // "Exif\0\0" チェック
+        if (buf[offset+4]===0x45&&buf[offset+5]===0x78&&buf[offset+6]===0x69&&buf[offset+7]===0x66) {
+          const exifStart=offset+10;
+          const littleEndian=(buf[exifStart]===0x49);
+          const read16=(o)=>littleEndian?((buf[exifStart+o+1]<<8)|buf[exifStart+o]):((buf[exifStart+o]<<8)|buf[exifStart+o+1]);
+          const read32=(o)=>littleEndian?((buf[exifStart+o+3]<<24)|(buf[exifStart+o+2]<<16)|(buf[exifStart+o+1]<<8)|buf[exifStart+o]):((buf[exifStart+o]<<24)|(buf[exifStart+o+1]<<16)|(buf[exifStart+o+2]<<8)|buf[exifStart+o+3]);
+          const ifdOffset=read32(4);
+          const entries=read16(ifdOffset);
+          for (let i=0;i<entries;i++) {
+            const entryOffset=ifdOffset+2+i*12;
+            const tag=read16(entryOffset);
+            if (tag===0x0112) { callback(read16(entryOffset+8)); return; }
+          }
+        }
+        break;
+      }
+      offset+=2+len;
     }
-    if (page.length === 0) { si++; continue; }
+    callback(1);
+  } catch(e) { callback(1); }
+}
+
+// =============================================
+// PAGE MAP
+// =============================================
+function buildPageMap() {
+  const pages=[]; let si=0;
+  while(pages.length<C_PAGES&&si<MAX_C){
+    const page=[]; let units=0;
+    while(si<MAX_C&&units<4){
+      const u=cSlots[si].portrait?2:1;
+      if(units+u>4) break;
+      page.push(si);units+=u;si++;
+    }
+    if(page.length===0){si++;continue;}
     pages.push(page);
   }
   return pages;
 }
 
-// ===== NAVIGATION =====
-function goPage(p) {
-  p = Math.max(0, Math.min((mode==='c'?C_PAGES:BA_PAGES)-1, p));
-  curPage = p;
-  document.getElementById('pinput').value = p+1;
-  renderPage();
+function goPage(p){
+  p=Math.max(0,Math.min((mode==='c'?C_PAGES:BA_PAGES)-1,p));
+  curPage=p; document.getElementById('pinput').value=p+1; renderPage();
 }
 
-// ===== RENDER =====
-function renderPage() {
-  const pbody = document.getElementById('pbody');
-  const pgbar = document.getElementById('pgbar');
-  const pnav  = document.getElementById('pnav');
-  pbody.innerHTML = '';
-  document.getElementById('ptotal').textContent = '/ '+(mode==='c'?C_PAGES:BA_PAGES);
-  pgbar.textContent = `PAGE ${curPage+1} / ${mode==='c'?C_PAGES:BA_PAGES}`;
-  pnav.style.display = 'flex';
-  mode === 'c' ? renderComment(pbody) : renderBA(pbody);
+// =============================================
+// RENDER
+// =============================================
+function renderPage(){
+  const pbody=document.getElementById('pbody');
+  pbody.innerHTML='';
+  document.getElementById('pgbar').textContent=`PAGE ${curPage+1} / ${mode==='c'?C_PAGES:BA_PAGES}`;
+  document.getElementById('ptotal').textContent='/'+(mode==='c'?C_PAGES:BA_PAGES);
+  mode==='c'?renderComment(pbody):renderBA(pbody);
 }
 
-function renderComment(container) {
-  const pm = buildPageMap();
-  const ids = pm[curPage] || [];
-  const bodyMM = 253, GAP = 3;
-  const units = ids.map(si => cSlots[si].portrait ? 2 : 1);
-  const totalU = units.reduce((a,b)=>a+b,0)||4;
-  const unitH = (bodyMM - GAP*(ids.length-1)) / totalU;
+function renderComment(container){
+  const pm=buildPageMap(), ids=pm[curPage]||[];
+  const bodyMM=253, GAP=3;
+  const units=ids.map(si=>cSlots[si].portrait?2:1);
+  const totalU=units.reduce((a,b)=>a+b,0)||4;
+  const unitH=(bodyMM-GAP*(ids.length-1))/totalU;
 
-  ids.forEach((si, idx) => {
-    const rH = unitH * units[idx];
-    const row = document.createElement('div');
-    row.className = idx===0 ? 'prow-c' : 'prow-c';
-    if (idx > 0) row.style.marginTop = GAP+'mm';
-    row.style.height = rH+'mm';
-    row.style.minHeight = '0';
+  ids.forEach((si,idx)=>{
+    const rH=unitH*units[idx];
+    const row=document.createElement('div');
+    row.className='prow-c';
+    if(idx>0) row.style.marginTop=GAP+'mm';
+    row.style.height=rH+'mm';
 
-    // Photo
-    const slot = mkSlot(cSlots[si].photo, cSlots[si].portrait, si+1,
-      ()=>{ pending={type:'c',si}; trig1(); },
-      ()=>{ cSlots[si].photo=null; cSlots[si].portrait=false; renderPage(); }
+    const slot=mkSlot(cSlots[si],si+1,
+      ()=>{pending={type:'c',si};trig1();},
+      ()=>{cSlots[si].photo=null;cSlots[si].normalizedUrl=null;cSlots[si].portrait=false;renderPage();}
     );
     row.appendChild(slot);
 
-    // Comment
-    const cp = document.createElement('div');
-    cp.className = 'cpanel';
-    const ta = document.createElement('textarea');
-    ta.placeholder = 'コメント・所見など...';
-    ta.value = cSlots[si].comment;
-    ta.dataset.si = si;
-    ta.addEventListener('input', e=>{ cSlots[+e.target.dataset.si].comment=e.target.value; });
+    const cp=document.createElement('div');
+    cp.className='cpanel';
+    const ta=document.createElement('textarea');
+    ta.placeholder='コメント・所見など...';
+    ta.value=cSlots[si].comment;
+    ta.dataset.si=si;
+    ta.addEventListener('input',e=>{cSlots[+e.target.dataset.si].comment=e.target.value;});
     cp.appendChild(ta);
     row.appendChild(cp);
     container.appendChild(row);
   });
 }
 
-function renderBA(container) {
-  const hdrs = document.createElement('div');
-  hdrs.className = 'ba-headers';
-  hdrs.innerHTML = '<div class="ba-hdr bef">BEFORE　施工前</div><div class="ba-hdr aft">AFTER　施工後</div>';
+function renderBA(container){
+  const hdrs=document.createElement('div');
+  hdrs.className='ba-headers';
+  hdrs.innerHTML='<div class="ba-hdr bef">BEFORE　施工前</div><div class="ba-hdr aft">AFTER　施工後</div>';
   container.appendChild(hdrs);
 
-  const bodyMM = 245, GAP = 3;
-  const rows = baData[curPage];
-  const rowUnits = rows.map(r=>Math.max(r.before.portrait?2:1, r.after.portrait?2:1));
-  const totalU = rowUnits.reduce((a,b)=>a+b,0)||BA_ROWS;
-  const unitH = (bodyMM - GAP*(rows.length-1)) / totalU;
+  const bodyMM=245,GAP=3;
+  const rows=baData[curPage];
+  const rowUnits=rows.map(r=>Math.max(r.before.portrait?2:1,r.after.portrait?2:1));
+  const totalU=rowUnits.reduce((a,b)=>a+b,0)||BA_ROWS;
+  const unitH=(bodyMM-GAP*(rows.length-1))/totalU;
 
-  rows.forEach((rd, r) => {
-    const rH = unitH * rowUnits[r];
-    const row = document.createElement('div');
-    row.className = 'prow-ba';
-    if (r > 0) row.style.marginTop = GAP+'mm';
-    row.style.height = rH+'mm';
-    row.style.minHeight = '0';
+  rows.forEach((rd,r)=>{
+    const rH=unitH*rowUnits[r];
+    const row=document.createElement('div');
+    row.className='prow-ba';
+    if(r>0) row.style.marginTop=GAP+'mm';
+    row.style.height=rH+'mm';
 
-    ['before','after'].forEach(side => {
-      const d = rd[side];
-      const cell = document.createElement('div');
-      cell.className = 'ba-cell';
-      const sw = document.createElement('div');
-      sw.className = 'ba-slot-wrap';
-      const sl = mkSlot(d.photo, d.portrait, side==='before'?`B${r+1}`:`A${r+1}`,
-        ()=>{ pending={type:'ba',page:curPage,r,side}; trig1(); },
-        ()=>{ baData[curPage][r][side].photo=null; baData[curPage][r][side].portrait=false; renderPage(); }
+    ['before','after'].forEach(side=>{
+      const d=rd[side];
+      const cell=document.createElement('div');
+      cell.className='ba-cell';
+      const sw=document.createElement('div');
+      sw.className='ba-slot-wrap';
+      const sl=mkSlot(d,side==='before'?`B${r+1}`:`A${r+1}`,
+        ()=>{pending={type:'ba',page:curPage,r,side};trig1();},
+        ()=>{rd[side].photo=null;rd[side].normalizedUrl=null;rd[side].portrait=false;renderPage();}
       );
-      sl.style.height = '100%';
+      sl.style.cssText='width:100%;height:100%;';
       sw.appendChild(sl);
-      const cap = document.createElement('textarea');
-      cap.className = 'ba-cap'; cap.rows=1;
-      cap.placeholder = side==='before'?'施工前コメント':'施工後コメント';
-      cap.value = side==='before'?rd.capB:rd.capA;
-      cap.dataset.r=r; cap.dataset.side=side;
-      cap.addEventListener('input', e=>{
-        const rr=+e.target.dataset.r, ss=e.target.dataset.side;
-        if(ss==='before') baData[curPage][rr].capB=e.target.value;
-        else baData[curPage][rr].capA=e.target.value;
+      const cap=document.createElement('textarea');
+      cap.className='ba-cap';cap.rows=1;
+      cap.placeholder=side==='before'?'施工前コメント':'施工後コメント';
+      cap.value=side==='before'?rd.capB:rd.capA;
+      cap.dataset.r=r;cap.dataset.side=side;
+      cap.addEventListener('input',e=>{
+        const rr=+e.target.dataset.r,ss=e.target.dataset.side;
+        baData[curPage][rr][ss==='before'?'capB':'capA']=e.target.value;
       });
-      cell.appendChild(sw); cell.appendChild(cap);
+      cell.appendChild(sw);cell.appendChild(cap);
       row.appendChild(cell);
     });
     container.appendChild(row);
   });
 }
 
-function mkSlot(photo, portrait, label, onAdd, onRemove) {
-  const el = document.createElement('div');
-  el.className = 'slot'+(photo?' full'+(portrait?' is-p':''):'');
-  if (photo) {
-    const img = document.createElement('img');
-    img.src=photo; img.alt=label;
-    if (portrait) img.className='portrait';
+function mkSlot(d, label, onAdd, onRemove){
+  const el=document.createElement('div');
+  // 表示にはnormalizedUrl（EXIF補正済み）を使う
+  const displayUrl = d.normalizedUrl || d.photo;
+  el.className='slot'+(displayUrl?' full':'');
+  if(displayUrl){
+    const img=document.createElement('img');
+    img.src=displayUrl; img.alt=label;
     el.appendChild(img);
-    const num=document.createElement('div'); num.className='slot-num'; num.textContent=label; el.appendChild(num);
-    const rm=document.createElement('button'); rm.className='slot-rm'; rm.innerHTML='×';
-    rm.onclick=e=>{e.stopPropagation();onRemove();}; el.appendChild(rm);
+    const num=document.createElement('div');num.className='slot-num';num.textContent=label;el.appendChild(num);
+    const rm=document.createElement('button');rm.className='slot-rm';rm.innerHTML='×';
+    rm.onclick=e=>{e.stopPropagation();onRemove();};el.appendChild(rm);
   } else {
     el.innerHTML=`<div class="slot-ph"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="1.4"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>タップして<br>追加</span></div>`;
     el.onclick=onAdd;
@@ -298,251 +353,244 @@ function mkSlot(photo, portrait, label, onAdd, onRemove) {
   return el;
 }
 
-// ===== FILE INPUT =====
+// =============================================
+// FILE INPUT
+// =============================================
 function trig1(){const i=document.getElementById('inp1');i.value='';i.click();}
 function triggerBulk(){const i=document.getElementById('inpM');i.value='';i.click();}
 
-document.getElementById('inp1').addEventListener('change',function(){
-  const f=this.files[0]; if(!f||!pending) return;
-  readImg(f,(url,w,h)=>{
-    const port=h>w;
-    if(pending.type==='c'){cSlots[pending.si].photo=url;cSlots[pending.si].portrait=port;}
-    else{const d=baData[pending.page][pending.r][pending.side];d.photo=url;d.portrait=port;}
-    renderPage(); toast('追加しました');
-  });
+document.getElementById('inp1').addEventListener('change',async function(){
+  const f=this.files[0];if(!f||!pending) return;
+  const {url,normalized,portrait}=await normalizeImage(f);
+  if(pending.type==='c'){
+    cSlots[pending.si].photo=url;
+    cSlots[pending.si].normalizedUrl=normalized;
+    cSlots[pending.si].portrait=portrait;
+  } else {
+    const d=baData[pending.page][pending.r][pending.side];
+    d.photo=url;d.normalizedUrl=normalized;d.portrait=portrait;
+  }
+  renderPage();toast('追加しました');
 });
 
-document.getElementById('inpM').addEventListener('change',function(){
-  const files=Array.from(this.files); if(!files.length) return;
+document.getElementById('inpM').addEventListener('change',async function(){
+  const files=Array.from(this.files);if(!files.length) return;
   const empty=cSlots.map((s,i)=>s.photo===null?i:-1).filter(i=>i>=0);
   if(!empty.length){toast('スロットがいっぱいです');return;}
   const take=Math.min(files.length,empty.length);
-  let done=0;
+  toast(`処理中... 0/${take}`);
   for(let i=0;i<take;i++){
-    readImg(files[i],(url,w,h)=>{
-      cSlots[empty[i]].photo=url; cSlots[empty[i]].portrait=h>w;
-      if(++done===take){
-        const pm=buildPageMap();
-        const pg=pm.findIndex(p=>p.includes(empty[0]));
-        goPage(pg>=0?pg:0); toast(`${take}枚追加`);
-      }
-    });
+    const {url,normalized,portrait}=await normalizeImage(files[i]);
+    cSlots[empty[i]].photo=url;
+    cSlots[empty[i]].normalizedUrl=normalized;
+    cSlots[empty[i]].portrait=portrait;
+    toast(`処理中... ${i+1}/${take}`);
   }
+  const pm=buildPageMap();
+  const pg=pm.findIndex(p=>p.includes(empty[0]));
+  goPage(pg>=0?pg:0);
+  toast(`${take}枚追加しました`);
 });
 
-// ===== DRAG DROP =====
+// DRAG DROP
 let dc=0;
 document.addEventListener('dragenter',e=>{if(e.dataTransfer.types.includes('Files')){dc++;document.getElementById('dov').classList.add('on');}});
 document.addEventListener('dragleave',()=>{if(--dc<=0){dc=0;document.getElementById('dov').classList.remove('on');}});
 document.addEventListener('dragover',e=>e.preventDefault());
-document.addEventListener('drop',e=>{
+document.addEventListener('drop',async e=>{
   e.preventDefault();dc=0;document.getElementById('dov').classList.remove('on');
   const files=Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/'));
   if(!files.length) return;
   const empty=cSlots.map((s,i)=>s.photo===null?i:-1).filter(i=>i>=0);
   const take=Math.min(files.length,empty.length);
   if(!take){toast('スロットがいっぱいです');return;}
-  let done=0;
   for(let i=0;i<take;i++){
-    readImg(files[i],(url,w,h)=>{
-      cSlots[empty[i]].photo=url;cSlots[empty[i]].portrait=h>w;
-      if(++done===take){const pm=buildPageMap();const pg=pm.findIndex(p=>p.includes(empty[0]));goPage(pg>=0?pg:0);toast(`${take}枚追加`);}
-    });
+    const {url,normalized,portrait}=await normalizeImage(files[i]);
+    cSlots[empty[i]].photo=url;cSlots[empty[i]].normalizedUrl=normalized;cSlots[empty[i]].portrait=portrait;
   }
+  const pm=buildPageMap();
+  const pg=pm.findIndex(p=>p.includes(empty[0]));
+  goPage(pg>=0?pg:0);toast(`${take}枚追加`);
 });
 
-// ===== MODE =====
 function setMode(m){
   mode=m;
   document.getElementById('btnC').classList.toggle('on',m==='c');
   document.getElementById('btnBA').classList.toggle('on',m==='ba');
-  curPage=0; document.getElementById('pinput').value=1;
-  renderPage();
+  curPage=0;document.getElementById('pinput').value=1;renderPage();
 }
 
-// ===== CLEAR =====
 function clearAll(){
   if(!confirm('全データをクリアしますか？')) return;
-  cSlots=Array.from({length:MAX_C},()=>({photo:null,portrait:false,comment:''}));
-  baData=Array.from({length:BA_PAGES},()=>Array.from({length:BA_ROWS},()=>({before:{photo:null,portrait:false},after:{photo:null,portrait:false},capB:'',capA:''})));
+  cSlots=Array.from({length:MAX_C},()=>({photo:null,portrait:false,comment:'',normalizedUrl:null}));
+  baData=Array.from({length:BA_PAGES},()=>Array.from({length:BA_ROWS},()=>({before:{photo:null,portrait:false,normalizedUrl:null},after:{photo:null,portrait:false,normalizedUrl:null},capB:'',capA:''})));
   document.getElementById('ttlMain').value='';
   document.getElementById('ttlSub').value='';
-  curPage=0; document.getElementById('pinput').value=1;
-  renderPage(); toast('クリアしました');
+  curPage=0;document.getElementById('pinput').value=1;renderPage();toast('クリアしました');
 }
 
-// ===== HELPERS =====
-function readImg(file,cb){
-  const r=new FileReader();
-  r.onload=e=>{const img=new Image();img.onload=()=>cb(e.target.result,img.naturalWidth,img.naturalHeight);img.src=e.target.result;};
-  r.readAsDataURL(file);
-}
 function toast(msg){
   const el=document.getElementById('toast');
   el.textContent=msg;el.classList.add('show');
   clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),2400);
 }
 
-// ===== TEXT → IMAGE (日本語対応) =====
-async function textToCanvas(text, {fontSize=10, fontWeight='400', color='#333', maxWidthPx=300, lineHeightPx=16} = {}) {
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  const font = `${fontWeight} ${fontSize}px "Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-serif`;
-  ctx.font = font;
-  
+// =============================================
+// TEXT → PNG (日本語対応・Canvas描画)
+// =============================================
+async function textToPng(text, widthMM, opts={}){
+  if(!text||!text.trim()) return null;
+  const scale=3, mmToPx=3.7795;
+  const widthPx=Math.round(widthMM*mmToPx*scale);
+  const fontSize=(opts.fontSize||10)*scale;
+  const lineH=(opts.lineHeight||opts.fontSize*1.4||14)*scale;
+  const font=`${opts.fontWeight||'400'} ${fontSize}px "Noto Sans JP","Hiragino Kaku Gothic ProN",sans-serif`;
+
+  const tmp=document.createElement('canvas');
+  tmp.width=widthPx;tmp.height=50;
+  const tc=tmp.getContext('2d');
+  tc.font=font;
+
   // 折り返し
-  const lines = [];
-  let line = '';
-  for (const ch of text) {
-    if (ctx.measureText(line+ch).width > maxWidthPx && line) {
-      lines.push(line); line = ch;
-    } else { line += ch; }
+  const lines=[];let line='';
+  for(const ch of text){
+    if(tc.measureText(line+ch).width>widthPx-4&&line){lines.push(line);line=ch;}
+    else line+=ch;
   }
-  if (line) lines.push(line);
-  
-  canvas.width  = maxWidthPx;
-  canvas.height = lines.length * lineHeightPx + 4;
-  ctx.font = font;
-  ctx.fillStyle = color;
-  ctx.textBaseline = 'top';
-  lines.forEach((l,i) => ctx.fillText(l, 0, i * lineHeightPx + 2));
-  return canvas;
+  if(line) lines.push(line);
+
+  const canvas=document.createElement('canvas');
+  canvas.width=widthPx;
+  canvas.height=lines.length*lineH+scale*2;
+  const ctx=canvas.getContext('2d');
+  ctx.font=font;
+  ctx.fillStyle=opts.color||'#333333';
+  ctx.textBaseline='top';
+  lines.forEach((l,i)=>ctx.fillText(l,2,i*lineH+scale));
+
+  const hMM=(canvas.height/canvas.width)*widthMM;
+  return {dataUrl:canvas.toDataURL('image/png'),widthMM,heightMM:hMM};
 }
 
-// ===== PDF EXPORT =====
-async function exportPDF() {
-  if (!window.jspdf) { toast('ライブラリ読込中...'); return; }
-  const { jsPDF } = window.jspdf;
-
-  const titleRaw = document.getElementById('ttlMain').value.trim();
-  const sub      = document.getElementById('ttlSub').value.trim();
-  const maxP = mode==='c' ? C_PAGES : BA_PAGES;
-  const inputPages = prompt(`PDF出力するページ数（1〜${maxP}）`, String(maxP));
-  if (inputPages===null) return;
-  const exportPages = Math.min(Math.max(1, parseInt(inputPages)||maxP), maxP);
-
+// =============================================
+// PDF EXPORT
+// =============================================
+async function exportPDF(){
+  if(!window.jspdf){toast('ライブラリ読込中...');return;}
+  const {jsPDF}=window.jspdf;
+  const titleRaw=document.getElementById('ttlMain').value.trim();
+  const sub=document.getElementById('ttlSub').value.trim();
+  const maxP=mode==='c'?C_PAGES:BA_PAGES;
+  const inp=prompt(`PDF出力するページ数（1〜${maxP}）`,String(maxP));
+  if(inp===null) return;
+  const exportPages=Math.min(Math.max(1,parseInt(inp)||maxP),maxP);
   toast('PDF生成中...');
   await document.fonts.ready;
 
-  const pdf = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  const PW=210, PH=297, MG=10, usW=PW-MG*2;
-  // 1mm = 3.7795px @ 96dpi
-  const MM2PX = 3.7795;
+  const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const PW=210,PH=297,MG=10,usW=PW-MG*2;
 
-  async function addTextImg(text, x, y, widthMM, opts={}) {
-    if (!text) return 0;
-    const widthPx = widthMM * MM2PX * 2; // x2 for retina
-    const c = await textToCanvas(text, {
-      fontSize: (opts.fontSize||10) * 2,
-      fontWeight: opts.fontWeight||'400',
-      color: opts.color||'#333',
-      maxWidthPx: widthPx,
-      lineHeightPx: (opts.lineHeight||14) * 2,
-    });
-    const hMM = (c.height / c.width) * widthMM;
-    pdf.addImage(c.toDataURL('image/png'), 'PNG', x, y, widthMM, hMM);
-    return hMM;
-  }
+  for(let p=0;p<exportPages;p++){
+    if(p>0) pdf.addPage();
+    pdf.setFillColor(255,255,255);pdf.rect(0,0,PW,PH,'F');
+    let ty=MG;
 
-  for (let p=0; p<exportPages; p++) {
-    if (p>0) pdf.addPage();
-    pdf.setFillColor(255,255,255);
-    pdf.rect(0,0,PW,PH,'F');
-
-    let ty = MG;
-
-    // タイトル（中央）
-    if (titleRaw) {
-      const hMM = await addTextImg(titleRaw, MG, ty, usW, {fontSize:18, fontWeight:'800', color:'#16213e', lineHeight:24});
-      ty += hMM + 1;
+    // タイトル
+    if(titleRaw){
+      const t=await textToPng(titleRaw,usW,{fontSize:17,fontWeight:'800',color:'#16213e',lineHeight:23});
+      if(t){pdf.addImage(t.dataUrl,'PNG',MG,ty,t.widthMM,t.heightMM);ty+=t.heightMM+1;}
     }
-
-    // サブタイトル（中央）
-    if (sub) {
-      const hMM = await addTextImg(sub, MG, ty, usW, {fontSize:9, fontWeight:'400', color:'#8a90a0', lineHeight:13});
-      ty += hMM + 1;
+    // サブタイトル
+    if(sub){
+      const t=await textToPng(sub,usW,{fontSize:9,fontWeight:'400',color:'#8a90a0',lineHeight:13});
+      if(t){pdf.addImage(t.dataUrl,'PNG',MG,ty,t.widthMM,t.heightMM);ty+=t.heightMM+1;}
     }
-
     // 区切り線
-    pdf.setDrawColor(22,33,62); pdf.setLineWidth(0.5);
-    pdf.line(MG, ty, PW-MG, ty); ty += 2;
+    pdf.setDrawColor(22,33,62);pdf.setLineWidth(0.5);pdf.line(MG,ty,PW-MG,ty);ty+=2;
+    // ページ番号
+    pdf.setFont('helvetica','normal');pdf.setFontSize(7);pdf.setTextColor(160,165,180);
+    pdf.text(`PAGE ${p+1} / ${exportPages}`,PW-MG,ty+3.5,{align:'right'});ty+=5;
 
-    // PAGE番号
-    pdf.setFont('helvetica','normal'); pdf.setFontSize(7); pdf.setTextColor(160,165,180);
-    pdf.text(`PAGE ${p+1} / ${exportPages}`, PW-MG, ty+3.5, {align:'right'});
-    ty += 5;
+    const bodyH=PH-ty-MG;
 
-    const bodyH = PH - ty - MG;
+    if(mode==='c'){
+      const pm=buildPageMap(),ids=pm[p]||[];
+      if(!ids.length) continue;
+      const rowUnits=ids.map(si=>cSlots[si].portrait?2:1);
+      const totalU=rowUnits.reduce((a,b)=>a+b,0);
+      const GAP=2.5,unitH=(bodyH-GAP*(ids.length-1))/totalU;
+      const photoW=usW*0.52,cX=MG+photoW+3,cW=usW-photoW-3;
+      let ry=ty;
 
-    if (mode==='c') {
-      const pm = buildPageMap();
-      const ids = pm[p] || [];
-      if (!ids.length) continue;
-      const rowUnits = ids.map(si=>cSlots[si].portrait?2:1);
-      const totalU = rowUnits.reduce((a,b)=>a+b,0);
-      const GAP = 2.5;
-      const unitH = (bodyH - GAP*(ids.length-1)) / totalU;
-      const photoW = usW*0.52, cX=MG+photoW+3, cW=usW-photoW-3;
-
-      let ry = ty;
-      for (let i=0; i<ids.length; i++) {
-        const si=ids[i], rH=unitH*rowUnits[i], d=cSlots[si];
-
-        // 写真
-        if (d.photo) {
-          try { pdf.addImage(d.photo, d.photo.startsWith('data:image/png')?'PNG':'JPEG', MG, ry, photoW, rH); }
-          catch(e){ pdf.setFillColor(240,242,245); pdf.rect(MG,ry,photoW,rH,'F'); }
-        } else {
-          pdf.setFillColor(242,244,248); pdf.rect(MG,ry,photoW,rH,'F');
-          pdf.setDrawColor(200,208,220); pdf.setLineWidth(0.25); pdf.rect(MG,ry,photoW,rH,'S');
+      for(let i=0;i<ids.length;i++){
+        const si=ids[i],rH=unitH*rowUnits[i],d=cSlots[si];
+        // 写真（normalizedUrl使用でEXIF回転修正済み）
+        const imgSrc=d.normalizedUrl||d.photo;
+        if(imgSrc){
+          try{
+            const fmt=imgSrc.startsWith('data:image/png')?'PNG':'JPEG';
+            pdf.addImage(imgSrc,fmt,MG,ry,photoW,rH);
+          }catch(e){
+            pdf.setFillColor(240,242,245);pdf.rect(MG,ry,photoW,rH,'F');
+          }
+        }else{
+          pdf.setFillColor(242,244,248);pdf.rect(MG,ry,photoW,rH,'F');
+          pdf.setDrawColor(200,208,220);pdf.setLineWidth(0.25);pdf.rect(MG,ry,photoW,rH,'S');
         }
-
         // コメント枠
-        pdf.setFillColor(248,249,251); pdf.rect(cX,ry,cW,rH,'F');
-        pdf.setDrawColor(200,208,220); pdf.setLineWidth(0.25); pdf.rect(cX,ry,cW,rH,'S');
-
+        pdf.setFillColor(248,249,251);pdf.rect(cX,ry,cW,rH,'F');
+        pdf.setDrawColor(200,208,220);pdf.setLineWidth(0.25);pdf.rect(cX,ry,cW,rH,'S');
         // コメントテキスト
-        if (d.comment) {
-          await addTextImg(d.comment, cX+2, ry+2, cW-4, {fontSize:9, fontWeight:'400', color:'#333', lineHeight:13});
+        if(d.comment){
+          const t=await textToPng(d.comment,cW-4,{fontSize:9,fontWeight:'400',color:'#333',lineHeight:13});
+          if(t){
+            const maxH=rH-4;
+            const dH=Math.min(t.heightMM,maxH);
+            pdf.addImage(t.dataUrl,'PNG',cX+2,ry+2,t.widthMM,dH);
+          }
         }
-
-        ry += rH + (i<ids.length-1?GAP:0);
+        ry+=rH+(i<ids.length-1?GAP:0);
       }
 
-    } else {
+    }else{
       // BA
       const colW=(usW-3)/2;
-      pdf.setFillColor(255,243,205); pdf.rect(MG,ty-5,colW,6,'F');
-      pdf.setFillColor(212,237,218); pdf.rect(MG+colW+3,ty-5,colW,6,'F');
-      await addTextImg('BEFORE 施工前', MG+2, ty-4.5, colW-4, {fontSize:8,fontWeight:'700',color:'#7d5a00',lineHeight:11});
-      await addTextImg('AFTER 施工後',  MG+colW+5, ty-4.5, colW-4, {fontSize:8,fontWeight:'700',color:'#155724',lineHeight:11});
+      pdf.setFillColor(255,243,205);pdf.rect(MG,ty-5,colW,6,'F');
+      pdf.setFillColor(212,237,218);pdf.rect(MG+colW+3,ty-5,colW,6,'F');
+      const tb=await textToPng('BEFORE 施工前',colW-4,{fontSize:8,fontWeight:'700',color:'#7d5a00',lineHeight:11});
+      const ta=await textToPng('AFTER 施工後',colW-4,{fontSize:8,fontWeight:'700',color:'#155724',lineHeight:11});
+      if(tb) pdf.addImage(tb.dataUrl,'PNG',MG+2,ty-4.5,tb.widthMM,Math.min(tb.heightMM,5));
+      if(ta) pdf.addImage(ta.dataUrl,'PNG',MG+colW+5,ty-4.5,ta.widthMM,Math.min(ta.heightMM,5));
 
       const rows=baData[p];
       const rowUnits=rows.map(r=>Math.max(r.before.portrait?2:1,r.after.portrait?2:1));
       const totalU=rowUnits.reduce((a,b)=>a+b,0)||BA_ROWS;
-      const GAP=2.5, CAP=5;
+      const GAP=2.5,CAP=5;
       const unitH=(bodyH-GAP*(rows.length-1))/totalU;
-
       let ry=ty;
+
       for(let r=0;r<rows.length;r++){
-        const rH=unitH*rowUnits[r], imgH=rH-CAP-1, rd=rows[r];
+        const rH=unitH*rowUnits[r],imgH=rH-CAP-1,rd=rows[r];
         for(let c=0;c<2;c++){
-          const x=MG+c*(colW+3), side=c===0?'before':'after', d=rd[side];
-          if(d.photo){
-            try{pdf.addImage(d.photo,d.photo.startsWith('data:image/png')?'PNG':'JPEG',x,ry,colW,imgH);}
+          const x=MG+c*(colW+3),side=c===0?'before':'after',d=rd[side];
+          const imgSrc=d.normalizedUrl||d.photo;
+          if(imgSrc){
+            try{pdf.addImage(imgSrc,imgSrc.startsWith('data:image/png')?'PNG':'JPEG',x,ry,colW,imgH);}
             catch(e){pdf.setFillColor(240,242,245);pdf.rect(x,ry,colW,imgH,'F');}
           }else{
             pdf.setFillColor(242,244,248);pdf.rect(x,ry,colW,imgH,'F');
             pdf.setDrawColor(200,208,220);pdf.setLineWidth(0.25);pdf.rect(x,ry,colW,imgH,'S');
           }
           const cap=c===0?rd.capB:rd.capA;
-          if(cap) await addTextImg(cap, x, ry+imgH+1, colW, {fontSize:7.5,fontWeight:'400',color:'#444',lineHeight:11});
+          if(cap){
+            const t=await textToPng(cap,colW,{fontSize:7.5,fontWeight:'400',color:'#444',lineHeight:11});
+            if(t) pdf.addImage(t.dataUrl,'PNG',x,ry+imgH+1,t.widthMM,Math.min(t.heightMM,CAP));
+          }
         }
         ry+=rH+(r<rows.length-1?GAP:0);
       }
     }
 
-    // フッター
     const now=new Date();
     pdf.setFont('helvetica','normal');pdf.setFontSize(6.5);pdf.setTextColor(190,193,200);
     pdf.text(`${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`,MG,PH-3);
@@ -551,7 +599,6 @@ async function exportPDF() {
   const fname=(titleRaw||'photo-report').replace(/[\\/:*?"<>|]/g,'_')+'.pdf';
   const pdfBlob=pdf.output('blob');
   const blobUrl=URL.createObjectURL(pdfBlob);
-
   const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
   if(isIOS&&navigator.share){
     const file=new File([pdfBlob],fname,{type:'application/pdf'});
@@ -564,12 +611,11 @@ async function exportPDF() {
   if(!newTab){
     const a=document.createElement('a');a.href=blobUrl;a.download=fname;a.click();
     toast('✅ PDFをダウンロードしました');
-  } else {
+  }else{
     toast('✅ プレビューを開きました');
   }
 }
 
-// ===== INIT =====
 renderPage();
 </script>
 </body>
