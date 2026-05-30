@@ -586,20 +586,14 @@ async function exportPDF() {
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const PW = 210, PH = 297;
 
-  // キャプチャ前の準備
   const a4el = document.getElementById('a4');
   const subInput = document.getElementById('ttlSub');
 
-  // サブタイトルが空なら完全に非表示
-  const subWasVisible = subInput.style.display !== 'none';
+  // サブタイトルが空なら非表示
   if (!sub) subInput.style.display = 'none';
 
-  // 空スロットの「タップして追加」を非表示
-  const emptySlots = a4el.querySelectorAll('.slot:not(.full)');
-  emptySlots.forEach(s => { s.style.visibility = 'hidden'; });
-
-  // A4幅を210mmに相当するpxで固定（キャプチャ時に幅ズレ防止）
-  const A4_PX = 794; // 210mm @ 96dpi
+  // A4幅を固定（文字切れ防止）
+  const A4_PX = 794;
   const origWidth = a4el.style.width;
   const origMinHeight = a4el.style.minHeight;
   a4el.style.width = A4_PX + 'px';
@@ -612,10 +606,6 @@ async function exportPDF() {
     curPage = p;
     document.getElementById('pinput').value = p + 1;
     renderPage();
-
-    // ページごとに空スロット再非表示（renderPage後）
-    const emptySlotsCur = a4el.querySelectorAll('.slot:not(.full)');
-    emptySlotsCur.forEach(s => { s.style.visibility = 'hidden'; });
 
     await new Promise(r => setTimeout(r, 150));
 
@@ -633,7 +623,6 @@ async function exportPDF() {
         style.textContent = `
           @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;800&display=swap');
           * { font-family: 'Noto Sans JP', sans-serif !important; }
-          .slot:not(.full) { visibility: hidden !important; }
           #ttlSub[style*="display: none"] { display: none !important; }
         `;
         clonedDoc.head.appendChild(style);
