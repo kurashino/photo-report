@@ -586,7 +586,25 @@ async function exportPDF() {
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const PW = 210, PH = 297;
 
-  // 現在のページを保存して後で戻す
+  // キャプチャ前の準備
+  const a4el = document.getElementById('a4');
+  const subInput = document.getElementById('ttlSub');
+
+  // サブタイトルが空なら完全に非表示
+  const subWasVisible = subInput.style.display !== 'none';
+  if (!sub) subInput.style.display = 'none';
+
+  // 空スロットの「タップして追加」を非表示
+  const emptySlots = a4el.querySelectorAll('.slot:not(.full)');
+  emptySlots.forEach(s => { s.style.visibility = 'hidden'; });
+
+  // A4幅を210mmに相当するpxで固定（キャプチャ時に幅ズレ防止）
+  const A4_PX = 794; // 210mm @ 96dpi
+  const origWidth = a4el.style.width;
+  const origMinHeight = a4el.style.minHeight;
+  a4el.style.width = A4_PX + 'px';
+  a4el.style.minHeight = 'auto';
+
   const savedPage = curPage;
 
   for (let p = 0; p < exportPages; p++) {
@@ -595,10 +613,11 @@ async function exportPDF() {
     document.getElementById('pinput').value = p + 1;
     renderPage();
 
-    // 少し待ってDOMを安定させる
-    await new Promise(r => setTimeout(r, 120));
+    // ページごとに空スロット再非表示（renderPage後）
+    const emptySlotsCur = a4el.querySelectorAll('.slot:not(.full)');
+    emptySlotsCur.forEach(s => { s.style.visibility = 'hidden'; });
 
-    const a4el = document.getElementById('a4');
+    await new Promise(r => setTimeout(r, 150));
 
     const canvas = await html2canvas(a4el, {
       scale: 2,
@@ -606,12 +625,17 @@ async function exportPDF() {
       allowTaint: true,
       backgroundColor: '#ffffff',
       logging: false,
-      width: a4el.offsetWidth,
-      height: a4el.offsetHeight,
+      width: A4_PX,
+      height: a4el.scrollHeight,
+      windowWidth: A4_PX,
       onclone: (clonedDoc) => {
-        // クローンにもフォントを適用
         const style = clonedDoc.createElement('style');
-        style.textContent = `@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;800&display=swap'); * { font-family: 'Noto Sans JP', sans-serif !important; }`;
+        style.textContent = `
+          @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;800&display=swap');
+          * { font-family: 'Noto Sans JP', sans-serif !important; }
+          .slot:not(.full) { visibility: hidden !important; }
+          #ttlSub[style*="display: none"] { display: none !important; }
+        `;
         clonedDoc.head.appendChild(style);
       }
     });
@@ -624,10 +648,13 @@ async function exportPDF() {
     pdf.addImage(imgData, 'JPEG', 0, 0, imgW, imgH);
   }
 
-  // ページを元に戻す
+  // 元に戻す
   curPage = savedPage;
   document.getElementById('pinput').value = savedPage + 1;
-  renderPage();
+  a4el.style.width = origWidth;
+  a4el.style.minHeight = origMinHeight;
+  if (!sub) subInput.style.display = '';
+  renderPage(); // 空スロットのvisibilityも復元
 
   const fname = (titleRaw || 'photo-report').replace(/[\\/:*?"<>|]/g, '_') + '.pdf';
   const pdfBlob = pdf.output('blob');
