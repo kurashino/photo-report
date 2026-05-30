@@ -588,16 +588,20 @@ async function exportPDF() {
 
   const a4el = document.getElementById('a4');
   const subInput = document.getElementById('ttlSub');
-
-  // サブタイトルが空なら非表示
   if (!sub) subInput.style.display = 'none';
 
-  // A4幅を固定（文字切れ防止）
+  // 空スロットのプレースホルダーテキストを非表示（枠は残す）
+  const placeholders = a4el.querySelectorAll('.slot-ph');
+  placeholders.forEach(p => { p.style.visibility = 'hidden'; });
+
+  // A4要素を一時的に794px固定（右切れ防止）
   const A4_PX = 794;
-  const origWidth = a4el.style.width;
-  const origMinHeight = a4el.style.minHeight;
-  a4el.style.width = A4_PX + 'px';
-  a4el.style.minHeight = 'auto';
+  const origStyle = a4el.getAttribute('style') || '';
+  a4el.style.cssText = origStyle + `; width:${A4_PX}px !important; min-height:auto; position:relative;`;
+  // タイトルを中央揃えに強制
+  const ttlMain = document.getElementById('ttlMain');
+  const origTtlStyle = ttlMain.getAttribute('style') || '';
+  ttlMain.style.cssText = origTtlStyle + '; text-align:center !important;';
 
   const savedPage = curPage;
 
@@ -606,6 +610,10 @@ async function exportPDF() {
     curPage = p;
     document.getElementById('pinput').value = p + 1;
     renderPage();
+    // renderPage後も再非表示
+    a4el.querySelectorAll('.slot-ph').forEach(p => { p.style.visibility = 'hidden'; });
+    a4el.style.cssText = origStyle + `; width:${A4_PX}px !important; min-height:auto; position:relative;`;
+    ttlMain.style.cssText = origTtlStyle + '; text-align:center !important;';
 
     await new Promise(r => setTimeout(r, 150));
 
@@ -640,10 +648,10 @@ async function exportPDF() {
   // 元に戻す
   curPage = savedPage;
   document.getElementById('pinput').value = savedPage + 1;
-  a4el.style.width = origWidth;
-  a4el.style.minHeight = origMinHeight;
+  a4el.setAttribute('style', origStyle);
+  ttlMain.setAttribute('style', origTtlStyle);
   if (!sub) subInput.style.display = '';
-  renderPage(); // 空スロットのvisibilityも復元
+  renderPage();
 
   const fname = (titleRaw || 'photo-report').replace(/[\\/:*?"<>|]/g, '_') + '.pdf';
   const pdfBlob = pdf.output('blob');
