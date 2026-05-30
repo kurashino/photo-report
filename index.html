@@ -50,7 +50,7 @@ input,textarea,button{font-family:'Noto Sans JP',sans-serif;}
 .slot:hover{border-color:#16213e;}
 /* 写真あり：高さはgridが決める */
 .slot.full{border-style:solid;border-color:#c5cad8;cursor:default;aspect-ratio:unset;height:100%;}
-.slot img{width:100%;height:100%;object-fit:contain;display:block;background:#f2f4f8;}
+.slot img{width:100%;height:100%;object-fit:contain;display:block;background:#f2f4f8;image-orientation:from-image;}
 .slot-ph{display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none;}
 .slot-ph svg{opacity:.28;}
 .slot-ph span{font-size:9px;color:#aaa;text-align:center;line-height:1.4;}
@@ -134,90 +134,28 @@ let baData=Array.from({length:BA_PAGES},()=>
 let pending=null;
 
 // =============================================
-// EXIF回転を正規化してcanvasに描画した正しいdataURLを返す
+// 画像読み込み - ブラウザのEXIF自動回転に任せる
 // =============================================
 function normalizeImage(file) {
   return new Promise(resolve => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const url = e.target.result;
-      const img = new Image();
-      img.onload = () => {
-        // EXIFから回転情報を取得
-        getExifOrientation(e.target.result, orientation => {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          const w = img.naturalWidth, h = img.naturalHeight;
-          
-          // orientation に応じてcanvasサイズと変換を設定
-          if (orientation >= 5 && orientation <= 8) {
-            canvas.width = h; canvas.height = w;
-          } else {
-            canvas.width = w; canvas.height = h;
-          }
-          
-          ctx.save();
-          switch(orientation) {
-            case 2: ctx.transform(-1,0,0,1,w,0); break;
-            case 3: ctx.transform(-1,0,0,-1,w,h); break;
-            case 4: ctx.transform(1,0,0,-1,0,h); break;
-            case 5: ctx.transform(0,1,1,0,0,0); break;
-            case 6: ctx.transform(0,1,-1,0,h,0); break;
-            case 7: ctx.transform(0,-1,-1,0,h,w); break;
-            case 8: ctx.transform(0,-1,1,0,0,w); break;
-            default: break;
-          }
-          ctx.drawImage(img, 0, 0);
-          ctx.restore();
-          
-          const normalized = canvas.toDataURL('image/jpeg', 0.92);
-          const isPortrait = canvas.height > canvas.width;
-          resolve({ url, normalized, portrait: isPortrait });
-        });
-      };
-      img.src = url;
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      // imgタグに描画するとブラウザがEXIF回転を自動適用する
+      // そのままCanvasに描いてdataURLを取得
+      const canvas = document.createElement('canvas');
+      canvas.width  = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const normalized = canvas.toDataURL('image/jpeg', 0.92);
+      const isPortrait = img.naturalHeight > img.naturalWidth;
+      URL.revokeObjectURL(url);
+      resolve({ url: normalized, normalized, portrait: isPortrait });
     };
-    reader.readAsDataURL(file);
+    img.style.imageOrientation = 'from-image';
+    img.src = url;
   });
-}
-
-function getExifOrientation(dataUrl, callback) {
-  try {
-    // base64からバイナリに変換
-    const base64 = dataUrl.split(',')[1];
-    const binary = atob(base64);
-    const buf = new Uint8Array(binary.length);
-    for (let i=0;i<binary.length;i++) buf[i]=binary.charCodeAt(i);
-    
-    // JPEGかチェック
-    if (buf[0]!==0xFF||buf[1]!==0xD8) { callback(1); return; }
-    
-    let offset=2;
-    while (offset<buf.length) {
-      if (buf[offset]!==0xFF) break;
-      const marker=buf[offset+1];
-      const len=(buf[offset+2]<<8)|buf[offset+3];
-      if (marker===0xE1) { // APP1 = EXIF
-        // "Exif\0\0" チェック
-        if (buf[offset+4]===0x45&&buf[offset+5]===0x78&&buf[offset+6]===0x69&&buf[offset+7]===0x66) {
-          const exifStart=offset+10;
-          const littleEndian=(buf[exifStart]===0x49);
-          const read16=(o)=>littleEndian?((buf[exifStart+o+1]<<8)|buf[exifStart+o]):((buf[exifStart+o]<<8)|buf[exifStart+o+1]);
-          const read32=(o)=>littleEndian?((buf[exifStart+o+3]<<24)|(buf[exifStart+o+2]<<16)|(buf[exifStart+o+1]<<8)|buf[exifStart+o]):((buf[exifStart+o]<<24)|(buf[exifStart+o+1]<<16)|(buf[exifStart+o+2]<<8)|buf[exifStart+o+3]);
-          const ifdOffset=read32(4);
-          const entries=read16(ifdOffset);
-          for (let i=0;i<entries;i++) {
-            const entryOffset=ifdOffset+2+i*12;
-            const tag=read16(entryOffset);
-            if (tag===0x0112) { callback(read16(entryOffset+8)); return; }
-          }
-        }
-        break;
-      }
-      offset+=2+len;
-    }
-    callback(1);
-  } catch(e) { callback(1); }
 }
 
 // =============================================
