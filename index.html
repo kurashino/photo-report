@@ -728,8 +728,43 @@ async function exportPDF() {
   }
 
   const fname = (titleRaw || 'photo-report').replace(/[\\/:*?"<>|]/g,'_') + '.pdf';
-  pdf.save(fname);
-  toast('✅ PDFをダウンロードしました');
+  const pdfBlob = pdf.output('blob');
+  const blobUrl = URL.createObjectURL(pdfBlob);
+
+  // iOS Safari: Web Share API で共有シートを開く
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const canShare = navigator.share && navigator.canShare;
+
+  if (isIOS && canShare) {
+    const file = new File([pdfBlob], fname, { type: 'application/pdf' });
+    if (navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: fname });
+        toast('✅ 共有シートを開きました');
+        return;
+      } catch(e) {
+        if (e.name !== 'AbortError') {
+          // 共有キャンセル以外はフォールバック
+        } else {
+          return;
+        }
+      }
+    }
+  }
+
+  // PC・Android: 新タブでプレビュー表示 → ダウンロード or 共有
+  const previewUrl = blobUrl;
+  const newTab = window.open(previewUrl, '_blank');
+  if (!newTab) {
+    // ポップアップブロック時はそのままダウンロード
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = fname;
+    a.click();
+    toast('✅ PDFをダウンロードしました');
+  } else {
+    toast('✅ 新タブでプレビューを開きました');
+  }
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
