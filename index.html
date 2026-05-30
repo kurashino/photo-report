@@ -585,71 +585,97 @@ async function exportPDF() {
 
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const PW = 210, PH = 297;
+  const A4_PX = 794; // 210mm @ 96dpi
+  const A4_H_PX = 1123; // 297mm @ 96dpi
 
-  const a4el = document.getElementById('a4');
   const subInput = document.getElementById('ttlSub');
   if (!sub) subInput.style.display = 'none';
 
-  // 空スロットのプレースホルダーテキストを非表示（枠は残す）
-  const placeholders = a4el.querySelectorAll('.slot-ph');
-  placeholders.forEach(p => { p.style.visibility = 'hidden'; });
-
-  // A4要素を一時的に794px固定（右切れ防止）
-  const A4_PX = 794;
-  const origStyle = a4el.getAttribute('style') || '';
-  a4el.style.cssText = origStyle + `; width:${A4_PX}px !important; min-height:auto; position:relative;`;
-  // タイトルを中央揃えに強制
-  const ttlMain = document.getElementById('ttlMain');
-  const origTtlStyle = ttlMain.getAttribute('style') || '';
-  ttlMain.style.cssText = origTtlStyle + '; text-align:center !important;';
+  // オフスクリーンコンテナ：画面外に固定サイズで配置
+  const offscreen = document.createElement('div');
+  offscreen.style.cssText = `
+    position: fixed;
+    left: -9999px;
+    top: 0;
+    width: ${A4_PX}px;
+    height: ${A4_H_PX}px;
+    overflow: hidden;
+    background: white;
+    z-index: -1;
+  `;
+  document.body.appendChild(offscreen);
 
   const savedPage = curPage;
 
   for (let p = 0; p < exportPages; p++) {
-    // ページを切り替えてレンダリング
     curPage = p;
     document.getElementById('pinput').value = p + 1;
     renderPage();
-    // renderPage後も再非表示
-    a4el.querySelectorAll('.slot-ph').forEach(p => { p.style.visibility = 'hidden'; });
-    a4el.style.cssText = origStyle + `; width:${A4_PX}px !important; min-height:auto; position:relative;`;
-    ttlMain.style.cssText = origTtlStyle + '; text-align:center !important;';
-
     await new Promise(r => setTimeout(r, 150));
 
-    const canvas = await html2canvas(a4el, {
+    // A4要素をオフスクリーンにクローンして正確なサイズでキャプチャ
+    const a4el = document.getElementById('a4');
+    const clone = a4el.cloneNode(true);
+    clone.style.cssText = `
+      width:${A4_PX}px !important;
+      min-height:${A4_H_PX}px;
+      height:${A4_H_PX}px;
+      padding:34px 30px 26px;
+      background:white;
+      box-sizing:border-box;
+      font-family:'Noto Sans JP',sans-serif;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    `;
+
+    // タイトル中央揃え・幅フル
+    const cloneTtl = clone.querySelector('#ttlMain');
+    if (cloneTtl) {
+      cloneTtl.style.cssText = 'width:100%;text-align:center;font-size:19px;font-weight:800;color:#16213e;background:transparent;border:none;display:block;font-family:Noto Sans JP,sans-serif;';
+    }
+
+    // サブタイトル：入力があれば表示、なければ非表示
+    const cloneSub = clone.querySelector('#ttlSub');
+    if (cloneSub) {
+      if (!sub) {
+        cloneSub.style.display = 'none';
+      } else {
+        cloneSub.style.cssText = 'width:100%;text-align:center;font-size:10px;color:#8a90a0;background:transparent;border:none;display:block;font-family:Noto Sans JP,sans-serif;margin-top:2px;';
+      }
+    }
+
+    // 空スロットのプレースホルダーを非表示
+    clone.querySelectorAll('.slot-ph').forEach(el => { el.style.visibility = 'hidden'; });
+
+    // 写真のsrcをオリジナルから差し替え
+    const origImgs = a4el.querySelectorAll('.slot img');
+    const cloneImgs = clone.querySelectorAll('.slot img');
+    origImgs.forEach((img, i) => { if (cloneImgs[i]) cloneImgs[i].src = img.src; });
+
+    offscreen.innerHTML = '';
+    offscreen.appendChild(clone);
+    await new Promise(r => setTimeout(r, 100));
+
+    const canvas = await html2canvas(offscreen, {
       scale: 2,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#ffffff',
       logging: false,
       width: A4_PX,
-      height: a4el.scrollHeight,
-      windowWidth: A4_PX,
-      onclone: (clonedDoc) => {
-        const style = clonedDoc.createElement('style');
-        style.textContent = `
-          @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;800&display=swap');
-          * { font-family: 'Noto Sans JP', sans-serif !important; }
-          #ttlSub[style*="display: none"] { display: none !important; }
-        `;
-        clonedDoc.head.appendChild(style);
-      }
+      height: A4_H_PX,
     });
 
     const imgData = canvas.toDataURL('image/jpeg', 0.92);
-    const imgW = PW;
-    const imgH = (canvas.height * PW) / canvas.width;
-
     if (p > 0) pdf.addPage();
-    pdf.addImage(imgData, 'JPEG', 0, 0, imgW, imgH);
+    pdf.addImage(imgData, 'JPEG', 0, 0, PW, PH);
   }
 
-  // 元に戻す
+  // 後処理
+  document.body.removeChild(offscreen);
   curPage = savedPage;
   document.getElementById('pinput').value = savedPage + 1;
-  a4el.setAttribute('style', origStyle);
-  ttlMain.setAttribute('style', origTtlStyle);
   if (!sub) subInput.style.display = '';
   renderPage();
 
