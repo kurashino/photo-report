@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>フォトレポート</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -12,7 +16,13 @@
   --bg: #dde1e9; --border: #cdd2e0; --muted: #8a90a0;
   --slot: #f2f4f8; --cpanel: #f8f9fb;
 }
-body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif; background: var(--bg); }
+body {
+  font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', sans-serif;
+  background: var(--bg);
+}
+input, textarea, button {
+  font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', sans-serif;
+}
 
 /* ── TOOLBAR ── */
 .tb {
@@ -555,215 +565,95 @@ function toast(msg) {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// PDF EXPORT
+// PDF EXPORT (html2canvas方式 - 日本語完全対応)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 async function exportPDF() {
-  if (!window.jspdf) { toast('PDFライブラリ準備中...'); return; }
+  if (!window.jspdf || !window.html2canvas) { toast('ライブラリ読込中...'); return; }
   const { jsPDF } = window.jspdf;
   const titleRaw = document.getElementById('ttlMain').value.trim();
   const sub = document.getElementById('ttlSub').value.trim();
 
-  // ページ範囲を確認
   const maxP = mode === 'c' ? C_PAGES : BA_PAGES;
   const inputPages = prompt(`PDF出力するページ数を入力してください（1〜${maxP}）`, maxP);
-  if (inputPages === null) return; // キャンセル
+  if (inputPages === null) return;
   const exportPages = Math.min(Math.max(1, parseInt(inputPages) || maxP), maxP);
-  if (isNaN(exportPages)) { toast('⚠ 正しいページ数を入力してください'); return; }
 
-  toast('PDF生成中...');
+  toast('PDF生成中... しばらくお待ちください');
 
-  const pdf = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
-  const PW=210, PH=297, mg=9, usW=PW-mg*2;
+  // フォントが完全に読み込まれるまで待つ
+  await document.fonts.ready;
 
-  // タイトル描画ヘルパー（日本語はボックス描画のみ、テキストはASCIIのみ）
-  function drawTitleArea(pdf) {
-    let ty = mg + 5;
-    let hasTitle = false;
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const PW = 210, PH = 297;
 
-    if (titleRaw) {
-      // 日本語フォントがないためボックス+プレースホルダーで表示
-      pdf.setFillColor(22,33,62);
-      pdf.rect(mg, ty, usW, 10, 'F');
-      pdf.setFont('helvetica','bold'); pdf.setFontSize(14); pdf.setTextColor(255,255,255);
-      // ASCII変換（日本語はそのまま渡すと文字化けするため、可能な文字のみ）
-      const safeTitle = titleRaw.replace(/[^\x00-\x7F]/g, (c) => {
-        // UTF-8のまま渡す（jsPDFがUTF-8対応していれば表示される）
-        return c;
-      });
-      pdf.text(safeTitle, PW/2, ty+7, {align:'center'});
-      ty += 12; hasTitle = true;
-    }
+  // 現在のページを保存して後で戻す
+  const savedPage = curPage;
 
-    if (sub) {
-      pdf.setFont('helvetica','normal'); pdf.setFontSize(8); pdf.setTextColor(130,140,160);
-      pdf.text(sub, PW/2, ty+4, {align:'center'});
-      ty += 6;
-    }
+  for (let p = 0; p < exportPages; p++) {
+    // ページを切り替えてレンダリング
+    curPage = p;
+    document.getElementById('pinput').value = p + 1;
+    renderPage();
 
-    // 区切り線
-    pdf.setDrawColor(22,33,62); pdf.setLineWidth(0.4);
-    pdf.line(mg, ty+1, PW-mg, ty+1);
-    return ty + 4;
+    // 少し待ってDOMを安定させる
+    await new Promise(r => setTimeout(r, 120));
+
+    const a4el = document.getElementById('a4');
+
+    const canvas = await html2canvas(a4el, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      width: a4el.offsetWidth,
+      height: a4el.offsetHeight,
+      onclone: (clonedDoc) => {
+        // クローンにもフォントを適用
+        const style = clonedDoc.createElement('style');
+        style.textContent = `@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;800&display=swap'); * { font-family: 'Noto Sans JP', sans-serif !important; }`;
+        clonedDoc.head.appendChild(style);
+      }
+    });
+
+    const imgData = canvas.toDataURL('image/jpeg', 0.92);
+    const imgW = PW;
+    const imgH = (canvas.height * PW) / canvas.width;
+
+    if (p > 0) pdf.addPage();
+    pdf.addImage(imgData, 'JPEG', 0, 0, imgW, imgH);
   }
 
-  if (mode === 'c') {
-    const pageMap = buildPageMap();
-    for (let p=0; p<exportPages; p++) {
-      if (p>0) pdf.addPage();
-      pdf.setFillColor(255,255,255); pdf.rect(0,0,PW,PH,'F');
+  // ページを元に戻す
+  curPage = savedPage;
+  document.getElementById('pinput').value = savedPage + 1;
+  renderPage();
 
-      let ty = drawTitleArea(pdf);
-
-      // Page num
-      pdf.setFont('helvetica','normal'); pdf.setFontSize(7); pdf.setTextColor(150,155,170);
-      pdf.text(`PAGE ${p+1} / ${exportPages}`, PW-mg, ty+3.5, {align:'right'});
-      ty+=5;
-
-      const bodyH = PH - ty - mg;
-      const slots = pageMap[p] || [];
-      if (!slots.length) continue;
-
-      const rowUnits = slots.map(si => cSlots[si].portrait ? 2 : 1);
-      const totalU = rowUnits.reduce((a,b)=>a+b,0);
-      const GAP=2.5, totalGaps=(slots.length-1)*GAP;
-      const unitH=(bodyH-totalGaps)/totalU;
-      const photoW=usW*0.52, cX=mg+photoW+3, cW=usW-photoW-3;
-
-      let ry=ty;
-      slots.forEach((si, idx) => {
-        const rH = unitH * rowUnits[idx];
-        const d = cSlots[si];
-
-        if (d.photo) {
-          try { pdf.addImage(d.photo, d.photo.startsWith('data:image/png')?'PNG':'JPEG', mg, ry, photoW, rH); }
-          catch(e) { pdf.setFillColor(240,240,242); pdf.rect(mg,ry,photoW,rH,'F'); }
-          pdf.setFont('helvetica','bold'); pdf.setFontSize(7); pdf.setTextColor(255,255,255);
-          pdf.text(`${si+1}`, mg+1.5, ry+rH-1.5);
-        } else {
-          pdf.setFillColor(242,244,248); pdf.rect(mg,ry,photoW,rH,'F');
-          pdf.setDrawColor(208,213,226); pdf.setLineWidth(0.2); pdf.rect(mg,ry,photoW,rH,'S');
-          pdf.setFont('helvetica','normal'); pdf.setFontSize(8); pdf.setTextColor(180,183,195);
-          pdf.text(`${si+1}`, mg+photoW/2, ry+rH/2, {align:'center'});
-        }
-
-        // Comment
-        pdf.setFillColor(248,249,251); pdf.rect(cX,ry,cW,rH,'F');
-        pdf.setDrawColor(208,213,226); pdf.setLineWidth(0.2); pdf.rect(cX,ry,cW,rH,'S');
-        if (d.comment) {
-          pdf.setFont('helvetica','normal'); pdf.setFontSize(8.5); pdf.setTextColor(50,55,65);
-          const lines = pdf.splitTextToSize(d.comment, cW-4);
-          let lY=ry+5;
-          lines.forEach(l=>{ if(lY<ry+rH-2){ pdf.text(l,cX+2,lY); lY+=4.2; } });
-        }
-
-        ry += rH + (idx<slots.length-1?GAP:0);
-      });
-
-      // Footer
-      const now=new Date(); pdf.setFontSize(6.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(190,193,200);
-      pdf.text(`${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`, mg, PH-3.5);
-      if (titleRaw) pdf.text(titleRaw, PW-mg, PH-3.5, {align:'right'});
-    }
-
-  } else {
-    // BA PDF
-    for (let p=0; p<exportPages; p++) {
-      if (p>0) pdf.addPage();
-      pdf.setFillColor(255,255,255); pdf.rect(0,0,PW,PH,'F');
-
-      let ty = drawTitleArea(pdf);
-
-      pdf.setFont('helvetica','normal'); pdf.setFontSize(7); pdf.setTextColor(150,155,170);
-      pdf.text(`PAGE ${p+1} / ${exportPages}`, PW-mg, ty+3.5, {align:'right'});
-      ty+=5;
-
-      // BA column headers
-      const colW=(usW-3)/2;
-      pdf.setFillColor(255,243,205); pdf.rect(mg,ty,colW,6,'F');
-      pdf.setFont('helvetica','bold'); pdf.setFontSize(9); pdf.setTextColor(125,90,0);
-      pdf.text('BEFORE', mg+colW/2, ty+4.2, {align:'center'});
-      pdf.setFillColor(212,237,218); pdf.rect(mg+colW+3,ty,colW,6,'F');
-      pdf.setTextColor(21,87,36); pdf.text('AFTER', mg+colW+3+colW/2, ty+4.2, {align:'center'});
-      ty+=8;
-
-      const bodyH=PH-ty-mg;
-      const rows=baData[p];
-      const rowUnits=rows.map(r=>Math.max(r.before.portrait?2:1, r.after.portrait?2:1));
-      const totalU=rowUnits.reduce((a,b)=>a+b,0)||BA_ROWS;
-      const CAP_H=5, GAP=2.5;
-      const totalGaps=(rows.length-1)*GAP;
-      const unitH=(bodyH-totalGaps)/totalU;
-
-      let ry=ty;
-      rows.forEach((rd, r)=>{
-        const rH=unitH*rowUnits[r];
-        const imgH=rH-CAP_H-1;
-
-        ['before','after'].forEach((side,ci)=>{
-          const x=mg+ci*(colW+3);
-          const d=rd[side];
-          if (d.photo) {
-            try { pdf.addImage(d.photo,d.photo.startsWith('data:image/png')?'PNG':'JPEG',x,ry,colW,imgH); }
-            catch(e){ pdf.setFillColor(240,240,242); pdf.rect(x,ry,colW,imgH,'F'); }
-          } else {
-            pdf.setFillColor(242,244,248); pdf.rect(x,ry,colW,imgH,'F');
-            pdf.setDrawColor(208,213,226); pdf.setLineWidth(0.2); pdf.rect(x,ry,colW,imgH,'S');
-            pdf.setFont('helvetica','normal'); pdf.setFontSize(8); pdf.setTextColor(180,183,195);
-            pdf.text(side==='before'?`B${r+1}`:`A${r+1}`, x+colW/2, ry+imgH/2, {align:'center'});
-          }
-          const cap=side==='before'?rd.capB:rd.capA;
-          if (cap) {
-            pdf.setFont('helvetica','normal'); pdf.setFontSize(7.5); pdf.setTextColor(60,65,80);
-            const cl=pdf.splitTextToSize(cap,colW);
-            pdf.text(cl[0],x,ry+imgH+4);
-          }
-        });
-        ry+=rH+(r<rows.length-1?GAP:0);
-      });
-
-      const now=new Date(); pdf.setFontSize(6.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(190,193,200);
-      pdf.text(`${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`,mg,PH-3.5);
-      if (titleRaw) pdf.text(titleRaw,PW-mg,PH-3.5,{align:'right'});
-    }
-  }
-
-  const fname = (titleRaw || 'photo-report').replace(/[\\/:*?"<>|]/g,'_') + '.pdf';
+  const fname = (titleRaw || 'photo-report').replace(/[\\/:*?"<>|]/g, '_') + '.pdf';
   const pdfBlob = pdf.output('blob');
   const blobUrl = URL.createObjectURL(pdfBlob);
 
-  // iOS Safari: Web Share API で共有シートを開く
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  const canShare = navigator.share && navigator.canShare;
-
-  if (isIOS && canShare) {
+  if (isIOS && navigator.share) {
     const file = new File([pdfBlob], fname, { type: 'application/pdf' });
-    if (navigator.canShare({ files: [file] })) {
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({ files: [file], title: fname });
         toast('✅ 共有シートを開きました');
         return;
       } catch(e) {
-        if (e.name !== 'AbortError') {
-          // 共有キャンセル以外はフォールバック
-        } else {
-          return;
-        }
+        if (e.name === 'AbortError') return;
       }
     }
   }
 
-  // PC・Android: 新タブでプレビュー表示 → ダウンロード or 共有
-  const previewUrl = blobUrl;
-  const newTab = window.open(previewUrl, '_blank');
+  const newTab = window.open(blobUrl, '_blank');
   if (!newTab) {
-    // ポップアップブロック時はそのままダウンロード
     const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = fname;
-    a.click();
+    a.href = blobUrl; a.download = fname; a.click();
     toast('✅ PDFをダウンロードしました');
   } else {
-    toast('✅ 新タブでプレビューを開きました');
+    toast('✅ プレビューを開きました');
   }
 }
 
