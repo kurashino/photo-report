@@ -134,22 +134,32 @@ let baData=Array.from({length:BA_PAGES},()=>
 let pending=null;
 
 // =============================================
-// 画像読み込み - ブラウザのEXIF自動回転に任せる
+// 画像読み込み - ブラウザのEXIF自動回転に任せる + 自動圧縮
 // =============================================
+const MAX_IMG_PX = 1500; // 長辺の最大px
+const IMG_QUALITY = 0.82; // JPEG品質
+
 function normalizeImage(file) {
   return new Promise(resolve => {
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
-      // imgタグに描画するとブラウザがEXIF回転を自動適用する
-      // そのままCanvasに描いてdataURLを取得
+      let w = img.naturalWidth, h = img.naturalHeight;
+
+      // 長辺がMAX_IMG_PXを超える場合リサイズ
+      if (w > MAX_IMG_PX || h > MAX_IMG_PX) {
+        const ratio = Math.min(MAX_IMG_PX / w, MAX_IMG_PX / h);
+        w = Math.round(w * ratio);
+        h = Math.round(h * ratio);
+      }
+
       const canvas = document.createElement('canvas');
-      canvas.width  = img.naturalWidth;
-      canvas.height = img.naturalHeight;
+      canvas.width = w; canvas.height = h;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-      const normalized = canvas.toDataURL('image/jpeg', 0.92);
-      const isPortrait = img.naturalHeight > img.naturalWidth;
+      ctx.drawImage(img, 0, 0, w, h);
+
+      const normalized = canvas.toDataURL('image/jpeg', IMG_QUALITY);
+      const isPortrait = h > w;
       URL.revokeObjectURL(url);
       resolve({ url: normalized, normalized, portrait: isPortrait });
     };
